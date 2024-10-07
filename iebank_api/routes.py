@@ -26,7 +26,9 @@ def skull():
 def create_account():
     name = request.json['name']
     currency = request.json['currency']
-    account = Account(name, currency)
+    country = request.json['country'] # Get country from request
+
+    account = Account(name, currency, country)
     db.session.add(account)
     db.session.commit()
     return format_account(account)
@@ -63,5 +65,6 @@ def format_account(account):
         'balance': account.balance,
         'currency': account.currency,
         'status': account.status,
-        'created_at': account.created_at
+        'created_at': account.created_at,
+        'country': account.country # Return country field also
     }
