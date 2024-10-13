@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from flask_migrate import Migrate
 import os
 
 app = Flask(__name__)
@@ -17,6 +18,8 @@ elif os.getenv('ENV') == 'ghci':
     app.config.from_object('config.GithubCIConfig')
 
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 from iebank_api.models import Account
 
