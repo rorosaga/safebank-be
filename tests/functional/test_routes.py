@@ -49,3 +49,19 @@ def test_update_account(testing_client):
     assert response.status_code == 200
     assert response.json['name'] == 'John Doe Updated'
     assert response.json['country'] == 'France'
+
+def test_delete_account(testing_client):
+    """
+    GIVEN a Flask application
+    WHEN the '/accounts/<id>' page is deleted (DELETE)
+    THEN check the account is deleted successfully
+    """
+    # Create a new account first
+    response = testing_client.post('/accounts', json={'name': 'John Doe', 'currency': '€', 'country': 'Spain'})
+    assert response.status_code == 200
+    account_id = response.json['id']
+
+    # Delete the account
+    response = testing_client.delete(f'/accounts/{account_id}')
+    assert response.status_code == 200
+    assert response.json['id'] == account_id
