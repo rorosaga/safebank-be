@@ -18,12 +18,6 @@ jobs:
   build-dev:
     
     runs-on: ubuntu-latest
-    env:
-      ENV: dev
-      DBUSER: ${{ secrets.DBUSER }}
-      DBPASS: ${{ secrets.DBPASS }}
-      DBHOST: ${{ secrets.DBHOST }}
-      DBNAME: ${{ secrets.DBNAME }}
 
     steps:
     - uses: actions/checkout@v4
@@ -56,12 +50,6 @@ jobs:
   build-uat:
 
     runs-on: ubuntu-latest
-    env:
-      ENV: dev
-      DBUSER: ${{ secrets.DBUSER }}
-      DBPASS: ${{ secrets.DBPASS }}
-      DBHOST: ${{ secrets.UAT_DBHOST }}
-      DBNAME: ${{ secrets.UAT_DBNAME }}
 
     steps:
     - uses: actions/checkout@v4
