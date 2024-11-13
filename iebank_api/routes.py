@@ -1,6 +1,7 @@
-from flask import Flask, request
-from iebank_api import db, app
-from iebank_api.models import Account
+from flask import request, jsonify
+from iebank_api import db, app  
+from iebank_api.models import Account, get_user_by_username
+from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/')
 def hello_world():
@@ -21,17 +22,48 @@ def skull():
         text = text +'<br/>Database password:' + db.engine.url.password
     return text
 
-
 @app.route('/accounts', methods=['POST'])
 def create_account():
-    name = request.json['name']
-    currency = request.json['currency']
-    country = request.json['country'] # Get country from request
+    data = request.json
+    name = data.get('name')
+    country = data.get('country')
+    password = data.get('password')
 
-    account = Account(name, currency, country)
+    if not name or not country or not password:
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    # Check if the username already exists
+    if Account.query.filter_by(name=name).first():
+        return jsonify({'message': 'Username already exists'}), 400
+
+    # Hash the password before storing it
+    hashed_password = generate_password_hash(password)
+
+    # Create a new account with the hashed password
+    account = Account(name=name, currency='EUR', country=country, password=hashed_password)
     db.session.add(account)
     db.session.commit()
-    return format_account(account)
+
+    return jsonify({'message': 'Account created successfully'}), 201
+
+@app.route('/clientlogin', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    user = get_user_by_username(username) 
+    
+    if user:   
+        if user and check_password_hash(user.password, password): 
+            return jsonify({'message': 'Login successful'}), 200
+    return jsonify({'message': 'Invalid username or password'}), 401
+
+
+@app.route('/clientsignup')
+def client_signup():
+    return "Client Signup Page"  
+
 
 @app.route('/accounts', methods=['GET'])
 def get_accounts():
@@ -68,4 +100,5 @@ def format_account(account):
         'status': account.status,
         'created_at': account.created_at,
         'country': account.country # Return country field also
+ 
     }

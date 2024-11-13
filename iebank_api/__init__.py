@@ -6,6 +6,7 @@ import os
 
 app = Flask(__name__)
 
+print(f"ENV is set to: {os.getenv('ENV')}") #can be removed after
 # Select environment based on the ENV environment variable
 if os.getenv('ENV') == 'local':
     print("Running in local mode")
@@ -16,15 +17,18 @@ elif os.getenv('ENV') == 'dev':
 elif os.getenv('ENV') == 'ghci':
     print("Running in github mode")
     app.config.from_object('config.GithubCIConfig')
+elif os.getenv('ENV') == 'uat':
+    print("Running in UAT mode")
+    app.config.from_object('config.UATConfig') #added this now
 
 db = SQLAlchemy(app)
-
 migrate = Migrate(app, db)
 
-from iebank_api.models import Account
+#from iebank_api.models import Account
 
 with app.app_context():
     db.create_all()
 CORS(app)
 
 from iebank_api import routes
+
