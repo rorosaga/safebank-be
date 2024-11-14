@@ -42,7 +42,7 @@ class Account(db.Model):
         self.name = name
         self.account_number = ''.join(random.choices(string.digits, k=20))
         self.currency = currency
-        self.balance = 0.0
+        self.balance = 1000
         self.status = "Active"
         self.country = country # Initialize country field
         self.username=username

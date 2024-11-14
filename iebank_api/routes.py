@@ -137,16 +137,20 @@ def get_user_accounts(username):
     return {"accounts": [format_account(account) for account in accounts]}, 200
 
 
-@app.route('/userspace/<string:username>', methods=['PUT'])
+@app.route('/userspace/<string:username>/transfer', methods=['PUT'])
 def transfer_money(username):
-    user = User.query.get(username)
+    user = User.query.filter_by(username=username).first()
     source_id = request.json['source']
     target_id = request.json['target']
-    amount = request.json['amount']
+    try:
+        amount = float(request.json.get('amount'))
+    except ValueError:
+        return jsonify({'message': 'Invalid amount value'}), 400
+
 
     
     # Check if source account belongs to the user
-    source_account = Account.query.get(source_id)
+    source_account = Account.query.filter_by(account_number=source_id).first()
     if not source_account:
         return jsonify({'message': 'Source account not found'}), 404
 
@@ -155,17 +159,17 @@ def transfer_money(username):
         return jsonify({'message': 'Source account does not belong to the user'}), 400
 
     # Check if target account exists
-    target_account = Account.query.get(target_id)
+    target_account = Account.query.filter_by(account_number=target_id).first()
     if not target_account:
         return jsonify({'message': 'Target account not found'}), 404
 
     # Perform the transfer (assuming basic checks on balance)
-    if source_account.balance < amount:
+    if source_account.balance < float(amount):
         return jsonify({'message': 'Insufficient funds'}), 400
 
     # Update balances
-    source_account.balance -= amount
-    target_account.balance += amount
+    source_account.balance -= float(amount)
+    target_account.balance += float(amount)
     
     # Commit the changes to the database
     db.session.commit()
