@@ -2,6 +2,28 @@ from iebank_api import db
 from datetime import datetime
 import string, random
 from werkzeug.security import generate_password_hash
+from sqlalchemy import func
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    source_account = db.Column(db.String(20), nullable=False)
+    target_account = db.Column(db.String(20), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default="€")
+    amount = db.Column(db.Float, nullable=False, default = 0.0)
+    created_at = db.Column(db.DateTime, nullable=False, default=func.now())
+
+    username = db.Column(db.String(32), db.ForeignKey('user.username'), nullable=False)
+    
+    def __repr__(self):
+        return '<Event %r>' % self.id
+
+    def __init__(self, username, currency, source_account, target_account, amount):
+        self.username = username
+        self.currency = currency
+        self.source_account = source_account
+        self.target_account = target_account
+        self.amount = amount
+
 
 class User(db.Model):
     username = db.Column(db.String(32), nullable=False, primary_key=True)
@@ -9,6 +31,7 @@ class User(db.Model):
 
     # Establish relationship with Account
     accounts = db.relationship('Account', backref='user', lazy=True)
+    transactions = db.relationship('Transaction', backref='user', lazy=True)
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -17,10 +40,14 @@ class User(db.Model):
         self.username = username
         self.password = generate_password_hash(password)
         self.accounts = []
+        self.transactions = []
 
     # Returns all accounts associated with a User
     def get_accounts(self):
         return self.accounts
+    
+    def get_transactions(self):
+        return self.transactions
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -29,11 +56,11 @@ class Account(db.Model):
     balance = db.Column(db.Float, nullable=False, default = 0.0)
     currency = db.Column(db.String(3), nullable=False, default="€")
     status = db.Column(db.String(10), nullable=False, default="Active")
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    created_at = db.Column(db.DateTime, nullable=False, default=func.now())
     country = db.Column(db.String(64), nullable=False) # Added new country field
     # password = db.Column(db.String(50), nullable=False ) #Added password
 
-    username = db.Column(db.Integer, db.ForeignKey('user.username'), nullable=False)
+    username = db.Column(db.String(32), db.ForeignKey('user.username'), nullable=False)
 
     def __repr__(self):
         return '<Event %r>' % self.account_number

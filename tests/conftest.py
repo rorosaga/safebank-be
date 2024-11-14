@@ -1,5 +1,5 @@
 import pytest
-from iebank_api.models import Account
+from iebank_api.models import Account, User, Transaction
 from iebank_api import db, app
 
 @pytest.fixture

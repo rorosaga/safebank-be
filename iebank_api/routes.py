@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from iebank_api import db, app  
-from iebank_api.models import Account, User, get_user_by_username
+from iebank_api.models import Account, User, Transaction, get_user_by_username
 from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/')
@@ -77,6 +77,8 @@ def get_accounts():
     accounts = Account.query.all()
     return {'accounts': [format_account(account) for account in accounts]}
 
+
+
 @app.route('/accounts/<int:id>', methods=['GET'])
 def get_account(id):
     account = Account.query.get(id)
@@ -127,6 +129,11 @@ def get_user(username):
     user = User.query.filter_by(username=username).first()
     return format_user(user), 200
 
+@app.route('/transactions', methods=['GET'])
+def get_all_transactions():
+    transactions = Transaction.query.all()
+    return {"transactions": [format_transaction(transaction) for transaction in transactions]}, 200
+
 
 @app.route('/userspace/<string:username>/accounts', methods=['GET'])
 def get_user_accounts(username):
@@ -137,11 +144,21 @@ def get_user_accounts(username):
     return {"accounts": [format_account(account) for account in accounts]}, 200
 
 
+@app.route('/userspace/<string:username>/transactions', methods=['GET'])
+def get_user_transactions(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return {"message": "User not found"}, 404
+    
+    transactions = user.get_transactions()
+    return {"transactions": [format_transaction(transaction) for transaction in transactions]}, 200
+
 @app.route('/userspace/<string:username>/transfer', methods=['PUT'])
 def transfer_money(username):
     user = User.query.filter_by(username=username).first()
     source_id = request.json['source']
     target_id = request.json['target']
+    currency = request.json['currency']
     try:
         amount = float(request.json.get('amount'))
     except ValueError:
@@ -174,6 +191,18 @@ def transfer_money(username):
     # Commit the changes to the database
     db.session.commit()
 
+    # Log transaction
+    transaction = Transaction(
+        username=username,
+        source_account=source_id,
+        target_account=target_id,
+        currency=currency,  # Adjust if currency field needs to be dynamic
+        amount=amount
+    )
+    db.session.add(transaction)
+
+    db.session.commit()
+
     # Return success response with updated account details
     return jsonify({
         'message': 'Transfer successful',
@@ -202,3 +231,15 @@ def format_user(user):
         }
     else:
         return {"message": "User not found"}
+    
+
+def format_transaction(trans):
+    return {
+        "id": trans.id,
+        "username": trans.username,
+        "source_account": trans.source_account,
+        "target_account": trans.target_account,
+        "currency": trans.currency,
+        "amount": trans.amount,
+        "created_at": trans.created_at.isoformat()
+    }
