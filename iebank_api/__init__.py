@@ -26,7 +26,7 @@ migrate = Migrate(app, db)
 
 CORS(app)
 
-from iebank_api.models import Account
+from iebank_api.models import Account, User
 
 with app.app_context():
     db.create_all()
