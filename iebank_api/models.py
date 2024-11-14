@@ -15,13 +15,11 @@ class User(db.Model):
         return '<Event %r>' % self.userId
 
     def __init__(self, username, password):
-        self.userId = ''.join(random.choices(string.digits, k=20))
         self.username = username
         self.password = generate_password_hash(password)
 
     # Returns all accounts associated with a User
     def get_accounts(self):
-        """Return all accounts associated with this user."""
         return self.accounts
 
 class Account(db.Model):

@@ -24,11 +24,13 @@ elif os.getenv('ENV') == 'uat':
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-#from iebank_api.models import Account
+CORS(app)
+
+from iebank_api.models import Account
 
 with app.app_context():
     db.create_all()
-CORS(app)
+
 
 from iebank_api import routes
 
