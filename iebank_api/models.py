@@ -6,14 +6,21 @@ from sqlalchemy import func
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    source_account = db.Column(db.String(20), nullable=False)
-    target_account = db.Column(db.String(20), nullable=False)
+    #source_account = db.Column(db.String(20), nullable=False)
+    #target_account = db.Column(db.String(20), nullable=False)
     currency = db.Column(db.String(3), nullable=False, default="€")
     amount = db.Column(db.Float, nullable=False, default = 0.0)
     created_at = db.Column(db.DateTime, nullable=False, default=func.now())
 
     username = db.Column(db.String(32), db.ForeignKey('user.username'), nullable=False)
-    
+
+    source_account = db.Column(db.String(20), db.ForeignKey('account.account_number'), nullable=False)
+    target_account = db.Column(db.String(20), db.ForeignKey('account.account_number'), nullable=False)
+
+    # Relationships
+    source = db.relationship('Account', foreign_keys=[source_account], backref='outgoing_transactions')
+    target = db.relationship('Account', foreign_keys=[target_account], backref='incoming_transactions')
+
     def __repr__(self):
         return '<Event %r>' % self.id
 
@@ -47,7 +54,12 @@ class User(db.Model):
         return self.accounts
     
     def get_transactions(self):
-        return self.transactions
+        account_numbers = [account.account_number for account in self.accounts]
+        transactions = Transaction.query.filter(
+            (Transaction.source_account.in_(account_numbers)) | 
+            (Transaction.target_account.in_(account_numbers))
+        ).all()
+        return transactions
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
