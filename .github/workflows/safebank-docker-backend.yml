@@ -1,0 +1,149 @@
+name: Deploy backend to Azure Web App
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+
+env:
+    DOCKER_REGISTRY_SERVER_URL_DEV: safebankcrdev.azurecr.io
+    DOCKER_REGISTRY_SERVER_URL_UAT: safebankcruat.azurecr.io
+    DOCKER_REGISTRY_SERVER_URL_PROD: safebankcrprod.azurecr.io
+    KEY_VAULT_NAME_DEV: safebank-kv-dev
+    KEY_VAULT_NAME_UAT: safebank-kv-uat
+    KEY_VAULT_NAME_PROD: safebank-kv-prod
+
+jobs:
+
+    build-and-deploy-dev:
+        runs-on: ubuntu-latest
+        outputs:
+            image-version: ${{ steps.image-version.outputs.version }}
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: "Log in to azure"
+          uses: azure/login@v2
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: "Get registry credentials from vault"
+          uses: Azure/cli@v2.1.0
+          with:
+            inlineScript: |
+                echo "REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
+                echo "REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
+
+        - name: "Login to registry"
+          uses: azure/docker-login@v2
+          with:
+            login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}
+            username: ${{ env.REGISTRY_USERNAME }}
+            password: ${{ env.REGISTRY_PASSWORD }}
+
+        - name: "Set image version"
+          id: image-version
+          run: |
+            echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
+        - name: "Print images"
+          run: |
+            echo "Images"
+            docker images
+
+        - name: "Docker build and push image"
+          run: |
+            docker build . -t ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest #${{ steps.image-version.outputs.version }}
+            docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest # ${{ steps.image-version.outputs.version }}
+
+
+    build-and-deploy-uat:
+        runs-on: ubuntu-latest
+        outputs:
+            image-version: ${{ steps.image-version.outputs.version }}
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: "Log in to azure"
+          uses: azure/login@v2
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: "Get registry credentials from vault"
+          uses: Azure/cli@v2.1.0
+          with:
+            inlineScript: |
+                echo "REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
+                echo "REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
+
+        - name: "Login to registry"
+          uses: azure/docker-login@v2
+          with:
+            login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}
+            username: ${{ env.REGISTRY_USERNAME }}
+            password: ${{ env.REGISTRY_PASSWORD }}
+
+        - name: "Set image version"
+          id: image-version
+          run: |
+            echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
+        - name: "Print images"
+          run: |
+            echo "Images"
+            docker images
+
+        - name: "Docker build and push image"
+          run: |
+            docker build . -t ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest #${{ steps.image-version.outputs.version }}
+            docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest # ${{ steps.image-version.outputs.version }}
+
+
+    # build-and-deploy-prod:
+    #     runs-on: ubuntu-latest
+    #     outputs:
+    #         image-version: ${{ steps.image-version.outputs.version }}
+
+    #     steps:
+    #     - name: Checkout code
+    #       uses: actions/checkout@v4
+
+    #     - name: "Log in to azure"
+    #       uses: azure/login@v2
+    #       with:
+    #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    #     - name: "Get registry credentials from vault"
+    #       uses: Azure/cli@v2.1.0
+    #       with:
+    #         inlineScript: |
+    #             echo "REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)" >> $GITHUB_ENV
+    #             echo "REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)" >> $GITHUB_ENV
+
+    #     - name: "Login to registry"
+    #       uses: azure/docker-login@v2
+    #       with:
+    #         login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}
+    #         username: ${{ env.REGISTRY_USERNAME }}
+    #         password: ${{ env.REGISTRY_PASSWORD }}
+
+    #     - name: "Set image version"
+    #       id: image-version
+    #       run: |
+    #         echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
+    #     - name: "Print images"
+    #       run: |
+    #         echo "Images"
+    #         docker images
+
+    #     - name: "Docker build and push image"
+    #       run: |
+    #         docker build . -t ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}/safebank-be:latest #${{ steps.image-version.outputs.version }}
+    #         docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}/safebank-be:latest # ${{ steps.image-version.outputs.version }}
