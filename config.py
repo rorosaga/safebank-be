@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 
 class Config(object): 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -14,7 +15,7 @@ class GithubCIConfig(Config):
 
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-    dbuser=os.getenv('DBUSER'),
+    dbuser=urllib.parse.quote(os.getenv('DBUSER')),
     dbpass=os.getenv('DBPASS'),
     dbhost=os.getenv('DBHOST'),
     dbname=os.getenv('DBNAME')
@@ -23,7 +24,7 @@ class DevelopmentConfig(Config):
 
 class UATConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-    dbuser=os.getenv('DBUSER'),
+    dbuser=urllib.parse.quote(os.getenv('DBUSER')),
     dbpass=os.getenv('DBPASS'),
     dbhost=os.getenv('DBHOST'),
     dbname=os.getenv('DBNAME')
