@@ -29,24 +29,6 @@ def create_account():
     country = data.get('country')
     username = data.get('username')
     #password = data.get('password')
-
-    '''
-    if not name or not country or not password:
-        return jsonify({'message': 'Missing required fields'}), 400
-
-    # Check if the username already exists
-    if Account.query.filter_by(name=name).first():
-        return jsonify({'message': 'Username already exists'}), 400
-
-    # Hash the password before storing it
-    hashed_password = generate_password_hash(password)
-
-    # Create a new account with the hashed password
-    account = Account(name=name, currency='EUR', country=country, password=hashed_password)
-    db.session.add(account)
-    db.session.commit()
-    '''
-
     # Create a new account with the hashed password
     account = Account(name=name, currency='EUR', country=country, username=username)
     db.session.add(account)
@@ -54,29 +36,53 @@ def create_account():
 
     return jsonify({'message': 'Account created successfully'}), 201
 
-@app.route('/clientlogin', methods=['POST'])
-def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
 
-    user = get_user_by_username(username) 
-    
-    if user:   
-        if user and check_password_hash(user.password, password): 
-            return jsonify({'message': 'Login successful'}), 200
-    return jsonify({'message': 'Invalid username or password'}), 401
-
+#the signup routes
 @app.route('/clientsignup')
 def client_signup():
     return "Client Signup Page"  
 
 
+# @app.route('/accounts', methods=['GET'])
+#def get_accounts():
+ #   users = User.query.all()
+  #  return {'accounts': [format_user(user) for user in users]}
+
+
 @app.route('/accounts', methods=['GET'])
 def get_accounts():
-    accounts = Account.query.all()
-    return {'accounts': [format_account(account) for account in accounts]}
+    """
+    Fetch all user accounts from the database.
+    This is for debugging purposes and includes sensitive data like hashed passwords.
+    DO NOT USE in production!
+    """
+    try:
+        # Query all users from the User table
+        users = User.query.all()
 
+        # Format the user data
+        accounts = [format_user(user) for user in users]
+
+        # Return the response
+        return jsonify({'accounts': accounts}), 200
+
+    except Exception as e:
+        # Handle unexpected errors
+        print(f"Error fetching accounts: {e}")
+        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+
+
+# Helper function to format user data
+def format_user(user):
+    """
+    Format user data for debugging purposes.
+    Includes sensitive information (hashed passwords).
+    """
+    return {
+        'id': user.id,
+        'username': user.username,
+        'password': user.password  # Include hashed password for debugging
+    }
 
 
 @app.route('/accounts/<int:id>', methods=['GET'])
@@ -101,33 +107,68 @@ def delete_account(id):
 
 @app.route('/users', methods=['POST'])
 def create_user():
-    data = request.json
-    password = data.get('password')
-    username = data.get('username')
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
 
-    
-    if not username or not password:
-        return jsonify({'message': 'Missing required fields'}), 400
+        if not username or not password:
+            return jsonify({'message': 'Username and password are required'}), 400
 
-    # Check if the username already exists
-    if User.query.filter_by(username=username).first():
-        return jsonify({'message': 'Username already exists'}), 400
+        if User.query.filter_by(username=username).first():
+            return jsonify({'message': 'Username already exists'}), 400
 
-    # Hash the password before storing it
-    hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password)
 
-    # Create a new account with the hashed password
-    account = User(username=username, password=hashed_password)
-    db.session.add(account)
-    db.session.commit()
+        # Debugging
+        print(f"Signup - Raw password: {password}")
+        print(f"Signup - Hashed password before saving: {hashed_password}")
 
-    return jsonify({'message': 'User created successfully'}), 201
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        # Fetch back the stored hash
+        stored_user = User.query.filter_by(username=username).first()
+        print(f"Stored hash in database: {stored_user.password}")
+
+        return jsonify({'message': 'User created successfully'}), 201
+    except Exception as e:
+        print(f"Error during user creation: {e}")
+        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
 
-@app.route('/user/<string:username>')
-def get_user(username):
-    user = User.query.filter_by(username=username).first()
-    return format_user(user), 200
+# Login code
+
+@app.route('/clientlogin', methods=['POST'])
+def login():
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return jsonify({'message': 'Username and password are required'}), 400
+
+        user = User.query.filter_by(username=username).first()
+
+        # Debugging
+        print(f"Login - Username: {username}")
+        print(f"Login - Raw password provided: {password}")
+        if user:
+            print(f"Login - Stored hashed password from database: {user.password}")
+            print(f"Hash comparison result: {check_password_hash(user.password, password)}")
+
+        if user and check_password_hash(user.password, password):
+            return jsonify({'message': 'Login successful'}), 200
+
+        return jsonify({'message': 'Invalid username or password'}), 401
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+
+
+# Transactions code
 
 @app.route('/transactions', methods=['GET'])
 def get_all_transactions():
