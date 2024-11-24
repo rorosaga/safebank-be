@@ -1,5 +1,6 @@
 import os
 import urllib.parse
+from azure.identity import DefaultAzureCredential
 
 class Config(object): 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -14,18 +15,20 @@ class GithubCIConfig(Config):
     DEBUG = True
 
 class DevelopmentConfig(Config):
+    credentials = DefaultAzureCredential()
     SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
     dbuser=urllib.parse.quote(os.getenv('DBUSER')),
-    dbpass=os.getenv('DBPASS'),
+    dbpass=credentials.get_token('https://ossrdbms-aad.database.windows.net').token,
     dbhost=os.getenv('DBHOST'),
     dbname=os.getenv('DBNAME')
     )
     DEBUG = True
 
 class UATConfig(Config):
+    credentials = DefaultAzureCredential()
     SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
     dbuser=urllib.parse.quote(os.getenv('DBUSER')),
-    dbpass=os.getenv('DBPASS'),
+    dbpass=credentials.get_token('https://ossrdbms-aad.database.windows.net').token,
     dbhost=os.getenv('DBHOST'),
     dbname=os.getenv('DBNAME')
     )
