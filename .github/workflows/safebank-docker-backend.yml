@@ -97,7 +97,7 @@ jobs:
 
         - name: "Docker build and push image"
           run: |
-            docker build . -t ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest .
+            docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest .
             docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
             docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest 
 
