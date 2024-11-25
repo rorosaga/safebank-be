@@ -5,7 +5,7 @@ class Config(object):
     DEBUG = False
 
 class LocalConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///local.db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///../instance/local.db'
     DEBUG = True
 
 class GithubCIConfig(Config):

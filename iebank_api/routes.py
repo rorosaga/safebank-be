@@ -25,9 +25,8 @@ def skull():
 
 @app.route('/accounts', methods=['POST'])
 def create_account(data=None):
-    if not data:
+    if data == None:
         data = request.json
-
     name = data.get('name')
     country = data.get('country')
     username = data.get('username')
@@ -61,13 +60,13 @@ def get_accounts():
     """
     try:
         # Query all users from the User table
-        users = User.query.all()
+        accounts = Account.query.all()
 
         # Format the user data
-        accounts = [format_user(user) for user in users]
+        accounts = [format_account(account) for account in accounts]
 
         # Return the response
-        return jsonify({'accounts': accounts}), 200
+        return {'accounts': accounts}
 
     except Exception as e:
         # Handle unexpected errors
