@@ -36,7 +36,7 @@ def create_account(data=None):
     db.session.add(account)
     db.session.commit()
 
-    return jsonify({'message': 'Account created successfully'}), 201
+    return jsonify({'message': 'Account created successfully', 'account': format_account(account)}), 201
 
 
 #the signup routes
