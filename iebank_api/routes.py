@@ -214,7 +214,9 @@ def transfer_money(username):
     except ValueError:
         return jsonify({'message': 'Invalid amount value'}), 400
 
-
+    # Check if amount is positive
+    if amount <= 0:
+        return jsonify({'message': 'Invalid amount value'}), 400
     
     # Check if source account belongs to the user
     source_account = Account.query.filter_by(account_number=source_id).first()
