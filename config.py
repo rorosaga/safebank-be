@@ -15,21 +15,25 @@ class GithubCIConfig(Config):
     DEBUG = True
 
 class DevelopmentConfig(Config):
-    credentials = DefaultAzureCredential()
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-    dbuser=urllib.parse.quote(os.getenv('DBUSER')),
-    dbpass=credentials.get_token('https://ossrdbms-aad.database.windows.net').token,
-    dbhost=os.getenv('DBHOST'),
-    dbname=os.getenv('DBNAME')
-    )
-    DEBUG = True
+    if os.getenv('ENV') == 'dev':
+        credential = DefaultAzureCredential()
+        SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
+            dbuser=urllib.parse.quote(os.getenv('DBUSER')),
+            dbpass=credential.get_token(
+                'https://ossrdbms-aad.database.windows.net').token,
+            dbhost=os.getenv('DBHOST'),
+            dbname=os.getenv('DBNAME')
+        )
+        DEBUG = True
 
 class UATConfig(Config):
-    credentials = DefaultAzureCredential()
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-    dbuser=urllib.parse.quote(os.getenv('DBUSER')),
-    dbpass=credentials.get_token('https://ossrdbms-aad.database.windows.net').token,
-    dbhost=os.getenv('DBHOST'),
-    dbname=os.getenv('DBNAME')
-    )
-    DEBUG = True
+    if os.getenv('ENV') == 'uat':
+        credential = DefaultAzureCredential()
+        SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
+            dbuser=urllib.parse.quote(os.getenv('DBUSER')),
+            dbpass=credential.get_token(
+                'https://ossrdbms-aad.database.windows.net').token,
+            dbhost=os.getenv('DBHOST'),
+            dbname=os.getenv('DBNAME')
+        )
+        DEBUG = True
