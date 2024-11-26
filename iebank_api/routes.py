@@ -130,18 +130,24 @@ def create_user():
         db.session.add(new_user)
         db.session.commit()
 
+        # Automatically create a bank account for the user
+
+        new_account = Account(
+            name=f"{username}'s Account",  # Set default name
+            currency="$",                 # Default currency
+            country="Spain",                # Default country 
+            username=username             # Associate with the user
+        )
+        db.session.add(new_account)
+        db.session.commit()
+
         # Fetch back the stored hash
         stored_user = User.query.filter_by(username=username).first()
         print(f"Stored hash in database: {stored_user.password}")
 
-        account_data = {
-            'name': "Account1",
-            'country': "Spain",
-            'username': username
-        }
-        create_account(account_data)
 
-        return jsonify({'message': 'User created successfully'}), 201
+        return jsonify({'message': 'User created successfully and account opened!'}), 201
+
     except Exception as e:
         print(f"Error during user creation: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
@@ -189,9 +195,25 @@ def get_all_transactions():
 def get_user_accounts(username):
     user = User.query.filter_by(username=username).first()
     if not user:
-        return {"message": "User not found"}, 404
-    accounts = user.get_accounts()
-    return {"accounts": [format_account(account) for account in accounts]}, 200
+        return jsonify({"message": "User not found"}), 404
+
+    accounts = user.get_accounts()  # Calls the method in your User model
+    return jsonify({
+        "accounts": [
+            {
+                "username": account.username,
+                "name": account.name,
+                "account_number": account.account_number,
+                "balance": account.balance,
+                "currency": account.currency,
+                "country": account.country,
+                "status": account.status,
+                "created_at": account.created_at.isoformat(),
+            }
+            for account in accounts
+        ]
+    }), 200
+
 
 
 @app.route('/userspace/<string:username>/transactions', methods=['GET'])
@@ -205,14 +227,72 @@ def get_user_transactions(username):
 
 @app.route('/userspace/<string:username>/transfer', methods=['PUT'])
 def transfer_money(username):
-    user = User.query.filter_by(username=username).first()
-    source_id = request.json['source']
-    target_id = request.json['target']
-    currency = request.json['currency']
     try:
-        amount = float(request.json.get('amount'))
-    except ValueError:
-        return jsonify({'message': 'Invalid amount value'}), 400
+        # Fetch the user making the transfer
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Extract and validate the request data
+        data = request.json
+        source_id = data.get('source')
+        target_id = data.get('target')
+        currency = data.get('currency')
+        try:
+            amount = float(data.get('amount'))
+        except (ValueError, TypeError):
+            return jsonify({'message': 'Invalid amount value'}), 400
+
+        # Validate source account
+        source_account = Account.query.filter_by(account_number=source_id).first()
+        if not source_account:
+            return jsonify({'message': 'Source account not found'}), 404
+        if source_account.username != user.username:
+            return jsonify({'message': 'Source account does not belong to the user'}), 403
+        if source_account.balance < amount:
+            return jsonify({'message': 'Insufficient funds in source account'}), 400
+
+        # Validate target account
+        target_account = Account.query.filter_by(account_number=target_id).first()
+        if not target_account:
+            return jsonify({'message': 'Target account not found'}), 404
+
+        # Perform the transfer
+        source_account.balance -= amount
+        target_account.balance += amount
+        db.session.commit()
+
+        # Log the transaction
+        transaction = Transaction(
+            username=username,
+            currency=currency,
+            source_account=source_id,
+            target_account=target_id,
+            amount=amount
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        # Return success response
+        return jsonify({
+            'message': 'Transfer successful',
+            'source_account': {
+                'account_number': source_account.account_number,
+                'balance': source_account.balance,
+                'currency': source_account.currency
+            },
+            'target_account': {
+                'account_number': target_account.account_number,
+                'balance': target_account.balance,
+                'currency': target_account.currency
+            }
+        }), 200
+
+    except Exception as e:
+        # Handle unexpected errors1
+        print(f"Error during transfer: {e}")
+        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+
 
     # Check if amount is positive
     if amount <= 0:
