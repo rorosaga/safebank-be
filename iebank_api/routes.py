@@ -36,7 +36,7 @@ def create_account(data=None):
     db.session.add(account)
     db.session.commit()
 
-    return jsonify({'message': 'Account created successfully'}), 201
+    return jsonify({'message': 'Account created successfully', 'account': format_account(account)}), 201
 
 
 #the signup routes
@@ -45,10 +45,10 @@ def client_signup():
     return "Client Signup Page"  
 
 
-# @app.route('/accounts', methods=['GET'])
-#def get_accounts():
- #   users = User.query.all()
-  #  return {'accounts': [format_user(user) for user in users]}
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return {'accounts': [format_user(user) for user in users]}
 
 
 @app.route('/accounts', methods=['GET'])
@@ -294,7 +294,9 @@ def transfer_money(username):
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
 
-
+    # Check if amount is positive
+    if amount <= 0:
+        return jsonify({'message': 'Invalid amount value'}), 400
     
     # Check if source account belongs to the user
     source_account = Account.query.filter_by(account_number=source_id).first()
