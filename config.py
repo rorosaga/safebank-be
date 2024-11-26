@@ -1,4 +1,6 @@
 import os
+import urllib.parse
+from azure.identity import DefaultAzureCredential
 
 class Config(object): 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -13,10 +15,19 @@ class GithubCIConfig(Config):
     DEBUG = True
 
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
-    dbuser=os.getenv('DBUSER'),
-    dbpass=os.getenv('DBPASS'),
-    dbhost=os.getenv('DBHOST'),
-    dbname=os.getenv('DBNAME')
-    )
-    DEBUG = True
+    if os.getenv('ENV') == 'dev':
+        # Initialize Azure credentials
+        credential = DefaultAzureCredential()
+        
+        # Construct the SQLAlchemy Database URI
+        SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
+            dbuser=urllib.parse.quote(os.getenv('DBUSER')),
+            dbpass=credential.get_token(
+                'https://ossrdbms-aad.database.windows.net'
+            ).token,
+            dbhost=os.getenv('DBHOST'),
+            dbname=os.getenv('DBNAME')
+        )
+        
+        # Enable debugging
+        DEBUG = True
