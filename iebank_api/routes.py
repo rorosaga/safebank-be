@@ -45,10 +45,10 @@ def client_signup():
     return "Client Signup Page"  
 
 
-# @app.route('/accounts', methods=['GET'])
-#def get_accounts():
- #   users = User.query.all()
-  #  return {'accounts': [format_user(user) for user in users]}
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return {'accounts': [format_user(user) for user in users]}
 
 
 @app.route('/accounts', methods=['GET'])
