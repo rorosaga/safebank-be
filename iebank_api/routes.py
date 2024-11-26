@@ -285,7 +285,7 @@ def transfer_money(username):
         }), 200
 
     except Exception as e:
-        # Handle unexpected errors
+        # Handle unexpected errors1
         print(f"Error during transfer: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
