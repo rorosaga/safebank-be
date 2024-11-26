@@ -217,9 +217,39 @@ def get_user_transactions(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return {"message": "User not found"}, 404
-    
-    transactions = user.get_transactions()
-    return {"transactions": [format_transaction(transaction) for transaction in transactions]}, 200
+
+    accounts = user.get_accounts()
+    account_numbers = [account.account_number for account in accounts]
+
+    # Fetch outgoing transactions
+    outgoing_transactions = Transaction.query.filter(
+        Transaction.source_account.in_(account_numbers)
+    ).all()
+
+    # Fetch incoming transactions
+    incoming_transactions = Transaction.query.filter(
+        Transaction.target_account.in_(account_numbers)
+    ).all()
+
+    # Combine and format all transactions
+    all_transactions = outgoing_transactions + incoming_transactions
+    formatted_transactions = [format_transaction(transaction) for transaction in all_transactions]
+
+    return jsonify({"transactions": formatted_transactions}), 200
+
+
+# Helper function to format transactions (keep it reusable)
+def format_transaction(trans):
+    return {
+        "id": trans.id,
+        "username": trans.username,
+        "source_account": trans.source_account,
+        "target_account": trans.target_account,
+        "currency": trans.currency,
+        "amount": trans.amount,
+        "created_at": trans.created_at.isoformat()
+    }
+
 
 @app.route('/userspace/<string:username>/transfer', methods=['PUT'])
 def transfer_money(username):
