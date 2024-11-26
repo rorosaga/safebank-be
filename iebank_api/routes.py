@@ -105,16 +105,18 @@ def handle_global_exception(e):
     return jsonify({"error": "Internal Server Error"}), 500
 
 
+
 # the signup routes
 @app.route("/clientsignup")
 def client_signup():
     return "Client Signup Page"
 
 
-# @app.route('/accounts', methods=['GET'])
-# def get_accounts():
-#   users = User.query.all()
-#  return {'accounts': [format_user(user) for user in users]}
+
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return {'accounts': [format_user(user) for user in users]}
 
 
 @app.route("/accounts", methods=["GET"])
@@ -326,6 +328,38 @@ def get_user_transactions(username):
             format_transaction(transaction) for transaction in transactions
         ]
     }, 200
+    accounts = user.get_accounts()
+    account_numbers = [account.account_number for account in accounts]
+
+    # Fetch outgoing transactions
+    outgoing_transactions = Transaction.query.filter(
+        Transaction.source_account.in_(account_numbers)
+    ).all()
+
+    # Fetch incoming transactions
+    incoming_transactions = Transaction.query.filter(
+        Transaction.target_account.in_(account_numbers)
+    ).all()
+
+    # Combine and format all transactions
+    all_transactions = outgoing_transactions + incoming_transactions
+    formatted_transactions = [format_transaction(transaction) for transaction in all_transactions]
+
+    return jsonify({"transactions": formatted_transactions}), 200
+
+
+# Helper function to format transactions (keep it reusable)
+def format_transaction(trans):
+    return {
+        "id": trans.id,
+        "username": trans.username,
+        "source_account": trans.source_account,
+        "target_account": trans.target_account,
+        "currency": trans.currency,
+        "amount": trans.amount,
+        "created_at": trans.created_at.isoformat()
+    }
+
 
 
 @app.route("/userspace/<string:username>/transfer", methods=["PUT"])
@@ -415,6 +449,55 @@ def transfer_money(username):
         logger.error(f"Error during transfer: {e}", exc_info=True)
         return jsonify({"message": "Internal server error", "error": str(e)}), 500
 
+
+
+    # Check if amount is positive
+    if amount <= 0:
+        return jsonify({'message': 'Invalid amount value'}), 400
+    
+    # Check if source account belongs to the user
+    source_account = Account.query.filter_by(account_number=source_id).first()
+    if not source_account:
+        return jsonify({'message': 'Source account not found'}), 404
+
+    # Ensure the source account is associated with the user
+    if source_account.username != user.username:
+        return jsonify({'message': 'Source account does not belong to the user'}), 400
+
+    # Check if target account exists
+    target_account = Account.query.filter_by(account_number=target_id).first()
+    if not target_account:
+        return jsonify({'message': 'Target account not found'}), 404
+
+    # Perform the transfer (assuming basic checks on balance)
+    if source_account.balance < float(amount):
+        return jsonify({'message': 'Insufficient funds'}), 400
+
+    # Update balances
+    source_account.balance -= float(amount)
+    target_account.balance += float(amount)
+    
+    # Commit the changes to the database
+    db.session.commit()
+
+    # Log transaction
+    transaction = Transaction(
+        username=username,
+        source_account=source_id,
+        target_account=target_id,
+        currency=currency,  # Adjust if currency field needs to be dynamic
+        amount=amount
+    )
+    db.session.add(transaction)
+
+    db.session.commit()
+
+    # Return success response with updated account details
+    return jsonify({
+        'message': 'Transfer successful',
+        'source_account': format_account(source_account),
+        'target_account': format_account(target_account)
+    }), 200
 
 def format_account(account):
     return {
