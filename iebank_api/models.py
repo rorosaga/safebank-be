@@ -83,6 +83,8 @@ class Account(db.Model):
         self.currency = currency
         self.country = country
         self.username = username
+        self.balance = 1000.0
+        self.status='Active'
 
 
 def get_user_by_username(username):
