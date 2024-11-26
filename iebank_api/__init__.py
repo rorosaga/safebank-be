@@ -18,8 +18,8 @@ elif os.getenv('ENV') == 'ghci':
     print("Running in github mode")
     app.config.from_object('config.GithubCIConfig')
 elif os.getenv('ENV') == 'uat':
-    print("Running in UAT mode")
-    app.config.from_object('config.UATConfig') #added this now
+    print("Running in github mode")
+    app.config.from_object('config.UATConfig')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

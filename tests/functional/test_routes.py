@@ -16,11 +16,11 @@ def test_create_account(testing_client):
     WHEN the '/accounts' page is created (POST)
     THEN check the account is created successfully
     """
-    response = testing_client.post('/accounts', json={'name': 'John Doe', 'currency': '€', 'country': 'Spain'})
-    assert response.status_code == 200
-    assert response.json['name'] == 'John Doe'
-    assert response.json['currency'] == '€'
-    assert response.json['country'] == 'Spain'
+    response = testing_client.post('/accounts', json={'name': 'Test', 'currency': 'EUR', 'country': 'Spain', 'username':'John'})
+    assert response.status_code == 201
+    assert response.json['account']['name'] == 'Test'
+    assert response.json['account']['currency'] == 'EUR'
+    assert response.json['account']['country'] == 'Spain'
 
 def test_dummy_wrong_path():
     """
@@ -40,14 +40,14 @@ def test_update_account(testing_client):
     THEN check the account is updated successfully
     """
     # Create a new account first
-    response = testing_client.post('/accounts', json={'name': 'John Doe', 'currency': '€', 'country': 'Spain'})
-    assert response.status_code == 200
-    account_id = response.json['id']
+    response = testing_client.post('/accounts', json={'name': 'Test', 'currency': '€', 'country': 'Spain', 'username':'John'})
+    assert response.status_code == 201
+    account_id = response.json['account']['id']
 
     # Update the account's country and name
-    response = testing_client.put(f'/accounts/{account_id}', json={'name': 'John Doe Updated', 'country': 'France'})
+    response = testing_client.put(f'/accounts/{account_id}', json={'name': 'Test Updated','username':'John', 'currency': '€', 'country': 'France'})
     assert response.status_code == 200
-    assert response.json['name'] == 'John Doe Updated'
+    assert response.json['name'] == 'Test Updated'
     assert response.json['country'] == 'France'
 
 def test_delete_account(testing_client):
@@ -57,9 +57,9 @@ def test_delete_account(testing_client):
     THEN check the account is deleted successfully
     """
     # Create a new account first
-    response = testing_client.post('/accounts', json={'name': 'John Doe', 'currency': '€', 'country': 'Spain'})
-    assert response.status_code == 200
-    account_id = response.json['id']
+    response = testing_client.post('/accounts',json={'name': 'Test', 'currency': '€', 'country': 'Spain', 'username':'John'})
+    assert response.status_code == 201
+    account_id = response.json['account']['id']
 
     # Delete the account
     response = testing_client.delete(f'/accounts/{account_id}')

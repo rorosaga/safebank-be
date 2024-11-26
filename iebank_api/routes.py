@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @app.route('/')
 def hello_world():
+
     return 'Hello, World!'
 
 @app.route('/skull', methods=['GET'])
@@ -23,8 +24,9 @@ def skull():
     return text
 
 @app.route('/accounts', methods=['POST'])
-def create_account():
-    data = request.json
+def create_account(data=None):
+    if data == None:
+        data = request.json
     name = data.get('name')
     country = data.get('country')
     username = data.get('username')
@@ -34,7 +36,7 @@ def create_account():
     db.session.add(account)
     db.session.commit()
 
-    return jsonify({'message': 'Account created successfully'}), 201
+    return jsonify({'message': 'Account created successfully', 'account': format_account(account)}), 201
 
 
 #the signup routes
@@ -43,10 +45,10 @@ def client_signup():
     return "Client Signup Page"  
 
 
-# @app.route('/accounts', methods=['GET'])
-#def get_accounts():
- #   users = User.query.all()
-  #  return {'accounts': [format_user(user) for user in users]}
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return {'accounts': [format_user(user) for user in users]}
 
 
 @app.route('/accounts', methods=['GET'])
@@ -58,13 +60,13 @@ def get_accounts():
     """
     try:
         # Query all users from the User table
-        users = User.query.all()
+        accounts = Account.query.all()
 
         # Format the user data
-        accounts = [format_user(user) for user in users]
+        accounts = [format_account(account) for account in accounts]
 
         # Return the response
-        return jsonify({'accounts': accounts}), 200
+        return {'accounts': accounts}
 
     except Exception as e:
         # Handle unexpected errors
@@ -143,7 +145,9 @@ def create_user():
         stored_user = User.query.filter_by(username=username).first()
         print(f"Stored hash in database: {stored_user.password}")
 
+
         return jsonify({'message': 'User created successfully and account opened!'}), 201
+
     except Exception as e:
         print(f"Error during user creation: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
@@ -320,7 +324,9 @@ def transfer_money(username):
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
 
-
+    # Check if amount is positive
+    if amount <= 0:
+        return jsonify({'message': 'Invalid amount value'}), 400
     
     # Check if source account belongs to the user
     source_account = Account.query.filter_by(account_number=source_id).first()
