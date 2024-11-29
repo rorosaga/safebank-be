@@ -37,3 +37,5 @@ class UATConfig(Config):
             dbname=os.getenv('DBNAME')
         )
         DEBUG = True
+
+print(f"DBUSER: {os.getenv('DBUSER')}, DBPASS: {os.getenv('DBPASS')}, DBHOST: {os.getenv('DBHOST')}, DBNAME: {os.getenv('DBNAME')}")

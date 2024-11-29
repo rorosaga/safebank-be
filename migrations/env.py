@@ -1,8 +1,6 @@
 import logging
 from logging.config import fileConfig
-
 from flask import current_app
-
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -111,3 +109,5 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+print(f"Database URL used by Alembic: {get_engine_url()}")
