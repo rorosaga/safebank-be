@@ -92,6 +92,13 @@ def update_account(id):
     db.session.commit()
     return format_account(account)
 
+@app.route('/users/<string:username>', methods=['PUT'])
+def update_user(username):
+    user = User.query.get(username)
+    user.country = request.json['country']
+    db.session.commit()
+    return format_user(user)
+
 @app.route('/accounts/<int:id>', methods=['DELETE'])
 def delete_account(id):
     account = Account.query.get(id)
@@ -99,12 +106,23 @@ def delete_account(id):
     db.session.commit()
     return format_account(account)
 
+@app.route('/users/<string:username>', methods=['DELETE'])
+def delete_user(username):
+    user = User.query.get(username)
+    accounts = user.get_accounts()
+    for account in accounts:
+        db.session.delete(account)
+    db.session.delete(user)
+    db.session.commit()
+    return format_user(user)
+
 @app.route('/users', methods=['POST'])
 def create_user():
     try:
         data = request.json
         username = data.get('username')
         password = data.get('password')
+        country = data.get('country')
 
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
@@ -118,7 +136,7 @@ def create_user():
         print(f"Signup - Raw password: {password}")
         print(f"Signup - Hashed password before saving: {hashed_password}")
 
-        new_user = User(username=username, password=hashed_password)
+        new_user = User(username=username, password=hashed_password, country=country)
         db.session.add(new_user)
         db.session.commit()
 
@@ -128,7 +146,7 @@ def create_user():
 
         account_data = {
             'name': "Account1",
-            'country': "Spain",
+            'country': country,
             'username': username
         }
         create_account(account_data)
@@ -292,6 +310,7 @@ def format_user(user):
     if user:
         return {
             "username": user.username,
+            "country": user.country,
         }
     else:
         return {"message": "User not found"}
