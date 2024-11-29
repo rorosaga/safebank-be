@@ -30,6 +30,11 @@ def create_account(data=None):
     name = data.get('name')
     country = data.get('country')
     username = data.get('username')
+
+    # check if user exists
+    if not User.query.filter_by(username=username).first():
+            return jsonify({'message': 'User does not exist'}), 400
+
     #password = data.get('password')
     # Create a new account with the hashed password
     account = Account(name=name, currency='EUR', country=country, username=username)
@@ -45,10 +50,10 @@ def client_signup():
     return "Client Signup Page"  
 
 
-# @app.route('/accounts', methods=['GET'])
-#def get_accounts():
- #   users = User.query.all()
-  #  return {'accounts': [format_user(user) for user in users]}
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return {'users': [format_user(user) for user in users]}
 
 
 @app.route('/accounts', methods=['GET'])
@@ -72,19 +77,6 @@ def get_accounts():
         # Handle unexpected errors
         print(f"Error fetching accounts: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
-
-
-# Helper function to format user data
-def format_user(user):
-    """
-    Format user data for debugging purposes.
-    Includes sensitive information (hashed passwords).
-    """
-    return {
-        'id': user.id,
-        'username': user.username,
-        'password': user.password  # Include hashed password for debugging
-    }
 
 
 @app.route('/accounts/<int:id>', methods=['GET'])
@@ -176,6 +168,25 @@ def login():
         print(f"Error during login: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
+@app.route('/adminlogin', methods=['POST'])
+def login_admin():
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return jsonify({'message': 'Username and password are required'}), 400
+
+        if username == "admin" and password == "1234":
+            return jsonify({'message': 'Login successful'}), 200
+
+        return jsonify({'message': 'Invalid username or password'}), 401
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+
+
 
 # Transactions code
 
@@ -209,19 +220,22 @@ def transfer_money(username):
     source_id = request.json['source']
     target_id = request.json['target']
     currency = request.json['currency']
+
+    # Check if amount is a float
     try:
         amount = float(request.json.get('amount'))
     except ValueError:
         return jsonify({'message': 'Invalid amount value'}), 400
-
-
     
-    # Check if source account belongs to the user
+    # Check if amount is positive
+    if amount <= 0.0:
+        return jsonify({'message': 'Could not transfer a non-positive amount'}), 400
+    
+    # Check if source account exists and belongs to user
     source_account = Account.query.filter_by(account_number=source_id).first()
     if not source_account:
         return jsonify({'message': 'Source account not found'}), 404
-
-    # Ensure the source account is associated with the user
+    
     if source_account.username != user.username:
         return jsonify({'message': 'Source account does not belong to the user'}), 400
 
