@@ -6,6 +6,7 @@ import os
 
 app = Flask(__name__)
 
+
 print(f"ENV is set to: {os.getenv('ENV')}") #can be removed after
 # Select environment based on the ENV environment variable
 if os.getenv('ENV') == 'local':

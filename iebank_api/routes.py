@@ -1,29 +1,84 @@
+import time
 from flask import request, jsonify
-from iebank_api import db, app  
+from iebank_api import db, app
 from iebank_api.models import Account, User, Transaction, get_user_by_username
+import logging
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 from werkzeug.security import generate_password_hash, check_password_hash
 
-@app.route('/')
+# Replace with your connection string
+connection_string = "InstrumentationKey=1a8b949f-7999-4e0b-9e44-287b23b089b2;IngestionEndpoint=https://northeurope-2.in.applicationinsights.azure.com/;LiveEndpoint=https://northeurope.livediagnostics.monitor.azure.com/;ApplicationId=7fb9da30-78df-4600-af14-083c9cf1d69e"
+
+# Set up logging
+logger = logging.getLogger("iebank_logger")
+logger.setLevel(logging.INFO)
+logger.addHandler(AzureLogHandler(connection_string=connection_string))
+
+# Log a test message
+
+
+@app.before_request
+def start_timer():
+    request.start_time = time.time()
+
+
+@app.after_request
+def log_response_time(response):
+    if hasattr(request, "start_time"):
+        latency = time.time() - request.start_time
+        status_code = response.status_code
+        logger.info(
+            f"Request to {request.path} completed in {latency:.2f}s with status {status_code}"
+        )
+        # Log latency breaches
+        if latency > 2.0:  # Threshold for performance SLI
+            logger.warning(
+                f"High latency: {request.path} took {latency:.2f}s (threshold: 2.0s)"
+            )
+    return response
+
+
+@app.route("/")
 def hello_world():
+    logger.info("Accessed the Hello World route")
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    app.logger.addHandler(console_handler)
+    return "Hello, World!"
 
-    return 'Hello, World!'
 
-@app.route('/skull', methods=['GET'])
+@app.route("/health", methods=["GET"])
+def health_check():
+    try:
+        db.session.execute("SELECT 1")  # Check database connectivity
+        logger.info(f"Health check passed at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        return jsonify({"status": "UP"}), 200
+    except Exception as e:
+        logger.error(
+            f"Health check failed at {time.strftime('%Y-%m-%d %H:%M:%S')}: {e}",
+            exc_info=True,
+        )
+        return jsonify({"status": "DOWN", "reason": str(e)}), 500
+
+
+@app.route("/skull", methods=["GET"])
 def skull():
-    text = 'Hi! This is the BACKEND SKULL! 💀 '
-    
-    text = text +'<br/>Database URL:' + db.engine.url.database
+    text = "Hi! This is the BACKEND SKULL! 💀 "
+    logger.info("skull ja")
+
+    text = text + "<br/>Database URL:" + db.engine.url.database
     if db.engine.url.host:
-        text = text +'<br/>Database host:' + db.engine.url.host
+        text = text + "<br/>Database host:" + db.engine.url.host
     if db.engine.url.port:
-        text = text +'<br/>Database port:' + db.engine.url.port
+        text = text + "<br/>Database port:" + db.engine.url.port
     if db.engine.url.username:
-        text = text +'<br/>Database user:' + db.engine.url.username
+        text = text + "<br/>Database user:" + db.engine.url.username
     if db.engine.url.password:
-        text = text +'<br/>Database password:' + db.engine.url.password
+        text = text + "<br/>Database password:" + db.engine.url.password
     return text
 
-@app.route('/accounts', methods=['POST'])
+
+@app.route("/accounts", methods=["POST"])
 def create_account(data=None):
     if data == None:
         data = request.json
@@ -34,20 +89,30 @@ def create_account(data=None):
     # check if user exists
     if not User.query.filter_by(username=username).first():
             return jsonify({'message': 'User does not exist'}), 400
+    
+    try:
+        account = Account(name=name, currency="EUR", country=country, username=username)
+        db.session.add(account)
+        db.session.commit()
+        logger.info(f"Account created successfully for username: {username}")
+        return jsonify({"message": "Account created successfully"}), 201
+    except Exception as e:
+        logger.error(f"Error creating account: {e}", exc_info=True)
+        return jsonify({"error": "Failed to create account"}), 500
 
-    #password = data.get('password')
-    # Create a new account with the hashed password
-    account = Account(name=name, currency='EUR', country=country, username=username)
-    db.session.add(account)
-    db.session.commit()
 
-    return jsonify({'message': 'Account created successfully'}), 201
+@app.errorhandler(Exception)
+def handle_global_exception(e):
+    logger.error(
+        f"Unhandled exception occurred: {e}, Path: {request.path}, Method: {request.method}",
+        exc_info=True,
+    )
+    return jsonify({"error": "Internal Server Error"}), 500
 
-
-#the signup routes
-@app.route('/clientsignup')
+# the signup routes
+@app.route("/clientsignup")
 def client_signup():
-    return "Client Signup Page"  
+    return "Client Signup Page"
 
 
 @app.route('/users', methods=['GET'])
@@ -56,7 +121,7 @@ def get_users():
     return {'users': [format_user(user) for user in users]}
 
 
-@app.route('/accounts', methods=['GET'])
+@app.route("/accounts", methods=["GET"])
 def get_accounts():
     """
     Fetch all user accounts from the database.
@@ -71,7 +136,7 @@ def get_accounts():
         accounts = [format_account(account) for account in accounts]
 
         # Return the response
-        return {'accounts': accounts}
+        return {"accounts": accounts}
 
     except Exception as e:
         # Handle unexpected errors
@@ -79,16 +144,17 @@ def get_accounts():
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
 
-@app.route('/accounts/<int:id>', methods=['GET'])
+@app.route("/accounts/<int:id>", methods=["GET"])
 def get_account(id):
     account = Account.query.get(id)
     return format_account(account)
 
-@app.route('/accounts/<int:id>', methods=['PUT'])
+
+@app.route("/accounts/<int:id>", methods=["PUT"])
 def update_account(id):
     account = Account.query.get(id)
-    account.name = request.json['name']
-    account.country = request.json['country']
+    account.name = request.json["name"]
+    account.country = request.json["country"]
     db.session.commit()
     return format_account(account)
 
@@ -125,10 +191,10 @@ def create_user():
         country = data.get('country')
 
         if not username or not password:
-            return jsonify({'message': 'Username and password are required'}), 400
+            return jsonify({"message": "Username and password are required"}), 400
 
         if User.query.filter_by(username=username).first():
-            return jsonify({'message': 'Username already exists'}), 400
+            return jsonify({"message": "Username already exists"}), 400
 
         hashed_password = generate_password_hash(password)
 
@@ -139,6 +205,20 @@ def create_user():
         new_user = User(username=username, password=hashed_password, country=country)
         db.session.add(new_user)
         db.session.commit()
+
+        '''
+
+        # Automatically create a bank account for the user
+
+        new_account = Account(
+            name=f"{username}'s Account",  # Set default name
+            currency="$",  # Default currency
+            country="Spain",  # Default country
+            username=username,  # Associate with the user
+        )
+        db.session.add(new_account)
+        db.session.commit()
+        '''
 
         # Fetch back the stored hash
         stored_user = User.query.filter_by(username=username).first()
@@ -154,20 +234,21 @@ def create_user():
         return jsonify({'message': 'User created successfully'}), 201
     except Exception as e:
         print(f"Error during user creation: {e}")
-        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+        return jsonify({"message": "Internal server error", "error": str(e)}), 500
 
 
 # Login code
 
-@app.route('/clientlogin', methods=['POST'])
+
+@app.route("/clientlogin", methods=["POST"])
 def login():
     try:
         data = request.json
-        username = data.get('username')
-        password = data.get('password')
+        username = data.get("username")
+        password = data.get("password")
 
         if not username or not password:
-            return jsonify({'message': 'Username and password are required'}), 400
+            return jsonify({"message": "Username and password are required"}), 400
 
         user = User.query.filter_by(username=username).first()
 
@@ -175,16 +256,22 @@ def login():
         print(f"Login - Username: {username}")
         print(f"Login - Raw password provided: {password}")
         if user:
+            logger.info(f"Login successful for user: {username}")
             print(f"Login - Stored hashed password from database: {user.password}")
-            print(f"Hash comparison result: {check_password_hash(user.password, password)}")
+            print(
+                f"Hash comparison result: {check_password_hash(user.password, password)}"
+            )
+        logger.warning(f"Login failed for user: {username}")
 
         if user and check_password_hash(user.password, password):
-            return jsonify({'message': 'Login successful'}), 200
+            return jsonify({"message": "Login successful"}), 200
 
-        return jsonify({'message': 'Invalid username or password'}), 401
+        return jsonify({"message": "Invalid username or password"}), 401
     except Exception as e:
+        logger.error(f"Error during login: {e}", exc_info=True)
+
         print(f"Error during login: {e}")
-        return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+        return jsonify({"message": "Internal server error", "error": str(e)}), 500
 
 @app.route('/adminlogin', methods=['POST'])
 def login_admin():
@@ -208,7 +295,8 @@ def login_admin():
 
 # Transactions code
 
-@app.route('/transactions', methods=['GET'])
+
+@app.route("/transactions", methods=["GET"])
 def get_all_transactions():
     transactions = Transaction.query.all()
     return {"transactions": [format_transaction(transaction) for transaction in transactions]}, 200
@@ -223,12 +311,12 @@ def get_user_accounts(username):
     return {"accounts": [format_account(account) for account in accounts]}, 200
 
 
-@app.route('/userspace/<string:username>/transactions', methods=['GET'])
+@app.route("/userspace/<string:username>/transactions", methods=["GET"])
 def get_user_transactions(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return {"message": "User not found"}, 404
-    
+
     transactions = user.get_transactions()
     return {"transactions": [format_transaction(transaction) for transaction in transactions]}, 200
 
