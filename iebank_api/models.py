@@ -33,6 +33,7 @@ class Transaction(db.Model):
 class User(db.Model):
     username = db.Column(db.String(32), nullable=False, primary_key=True)
     password = db.Column(db.String(500), nullable=False)  
+    country = db.Column(db.String(64), nullable=False)
 
     accounts = db.relationship('Account', backref='user', lazy='dynamic')
     transactions = db.relationship('Transaction', backref='user', lazy='dynamic')
@@ -40,9 +41,10 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, country):
         self.username = username
         self.password = password  # Assume pre-hashed password
+        self.country = country
 
     def get_accounts(self):
         """
