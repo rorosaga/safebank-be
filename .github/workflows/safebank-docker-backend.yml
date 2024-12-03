@@ -99,56 +99,56 @@ jobs:
             docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest 
 
 
-    deploy-uat:
-      runs-on: ubuntu-latest
-      needs: build
-      outputs:
-          image-version: ${{ steps.image-version.outputs.version }}
+    # deploy-uat:
+    #   runs-on: ubuntu-latest
+    #   needs: build
+    #   outputs:
+    #       image-version: ${{ steps.image-version.outputs.version }}
 
-      steps:
+    #   steps:
 
-      - name: Download Docker context artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-context
+    #   - name: Download Docker context artifact
+    #     uses: actions/download-artifact@v4
+    #     with:
+    #       name: docker-context
 
-      # - name: Checkout code
-      #   uses: actions/checkout@v4
+    #   # - name: Checkout code
+    #   #   uses: actions/checkout@v4
 
-      - name: "Log in to azure"
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+    #   - name: "Log in to azure"
+    #     uses: azure/login@v2
+    #     with:
+    #       creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: "Get registry credentials from vault"
-        run: |
-            REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
-            REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
-            echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
-            echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
+    #   - name: "Get registry credentials from vault"
+    #     run: |
+    #         REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
+    #         REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
+    #         echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
+    #         echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
-      # - name: "Login to registry"
-      #   uses: azure/docker-login@v2
-      #   with:
-      #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}
-      #     username: ${{ env.REGISTRY_USERNAME }}
-      #     password: ${{ env.REGISTRY_PASSWORD }}
+    #   # - name: "Login to registry"
+    #   #   uses: azure/docker-login@v2
+    #   #   with:
+    #   #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}
+    #   #     username: ${{ env.REGISTRY_USERNAME }}
+    #   #     password: ${{ env.REGISTRY_PASSWORD }}
 
-      - name: "Set image version"
-        id: image-version
-        run: |
-          echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+    #   - name: "Set image version"
+    #     id: image-version
+    #     run: |
+    #       echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
 
-      - name: "Print images"
-        run: |
-          echo "Images"
-          docker images
+    #   - name: "Print images"
+    #     run: |
+    #       echo "Images"
+    #       docker images
 
-      - name: "Docker build and push image"
-        run: |
-          docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest .
-          docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest 
+    #   - name: "Docker build and push image"
+    #     run: |
+    #       docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest .
+    #       docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
+    #       docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest 
       
 
     # build-and-deploy-prod:
