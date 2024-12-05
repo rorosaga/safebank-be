@@ -3,112 +3,56 @@ name: Deploy backend to Azure Web App
 on:
   push:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
-
 env:
-    DOCKER_REGISTRY_SERVER_URL_DEV: safebankcrdev.azurecr.io
-    DOCKER_REGISTRY_SERVER_URL_UAT: safebankcruat.azurecr.io
-    DOCKER_REGISTRY_SERVER_URL_PROD: safebankcrprod.azurecr.io
-    KEY_VAULT_NAME_DEV: safebank-kv-dev
-    KEY_VAULT_NAME_UAT: safebank-kv-uat
-    KEY_VAULT_NAME_PROD: safebank-kv-prod
+  DOCKER_REGISTRY_SERVER_URL_DEV: safebankcrdev.azurecr.io
+  DOCKER_REGISTRY_SERVER_URL_UAT: safebankcruat.azurecr.io
+  DOCKER_REGISTRY_SERVER_URL_PROD: safebankcrprod.azurecr.io
+  KEY_VAULT_NAME_DEV: safebank-kv-dev
+  KEY_VAULT_NAME_UAT: safebank-kv-uat
+  KEY_VAULT_NAME_PROD: safebank-kv-prod
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    build:
-      runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      steps:
-        - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-        - name: Set up Python 3.11
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.11"
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
 
-        - name: Upgrade pip
-          run: python -m pip install --upgrade pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-        - name: Install dependencies
-          run: pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8 pytest
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-        - name: Lint with flake8
-          run: |
-            pip install flake8 pytest
-            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Save Docker context as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-context
+          path: .
+          if-no-files-found: error
 
-        - name: Save Docker context as artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: docker-context
-            path: .
-            if-no-files-found: error
+  deploy-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      image-version: ${{ steps.image-version.outputs.version }}
 
-    deploy-dev:
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        runs-on: ubuntu-latest
-        needs: build
-        outputs:
-            image-version: ${{ steps.image-version.outputs.version }}
-
-        steps:
-
-        - name: Download Docker context artifact
-          uses: actions/download-artifact@v4
-          with:
-            name: docker-context
-
-        # - name: Checkout code
-        #   uses: actions/checkout@v4
-
-        - name: "Log in to azure"
-          uses: azure/login@v2
-          with:
-            creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-        - name: "Get registry credentials from vault"
-          run: |
-              REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)
-              REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)
-              echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
-              echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
-
-        # - name: "Login to registry"
-        #   uses: azure/docker-login@v2
-        #   with:
-        #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}
-        #     username: ${{ env.REGISTRY_USERNAME }}
-        #     password: ${{ env.REGISTRY_PASSWORD }}
-
-        - name: "Set image version"
-          id: image-version
-          run: |
-            echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
-
-        - name: "Print images"
-          run: |
-            echo "Images"
-            docker images
-
-        - name: "Docker build and push image"
-          run: |
-            docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest .
-            docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
-            docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest 
-
-
-    deploy-uat:
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      runs-on: ubuntu-latest
-      needs: build
-      outputs:
-          image-version: ${{ steps.image-version.outputs.version }}
-
-      steps:
-
+    steps:
       - name: Download Docker context artifact
         uses: actions/download-artifact@v4
         with:
@@ -124,10 +68,61 @@ jobs:
 
       - name: "Get registry credentials from vault"
         run: |
-            REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
-            REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
-            echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
-            echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
+          REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)
+          REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)
+          echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
+          echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
+
+      # - name: "Login to registry"
+      #   uses: azure/docker-login@v2
+      #   with:
+      #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}
+      #     username: ${{ env.REGISTRY_USERNAME }}
+      #     password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: "Set image version"
+        id: image-version
+        run: |
+          echo "version=$(date +'%Y.%m.%d.%H.%M')" >> $GITHUB_OUTPUT
+
+      - name: "Print images"
+        run: |
+          echo "Images"
+          docker images
+
+      - name: "Docker build and push image"
+        run: |
+          docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest .
+          docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
+          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest
+
+  deploy-uat:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      image-version: ${{ steps.image-version.outputs.version }}
+
+    steps:
+      - name: Download Docker context artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-context
+
+      # - name: Checkout code
+      #   uses: actions/checkout@v4
+
+      - name: "Log in to azure"
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "Get registry credentials from vault"
+        run: |
+          REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
+          REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)
+          echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
+          echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
       # - name: "Login to registry"
       #   uses: azure/docker-login@v2
@@ -150,17 +145,16 @@ jobs:
         run: |
           docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest .
           docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest 
+          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}/safebank-be:latest
 
-    deploy-prod:
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      runs-on: ubuntu-latest
-      needs: build
-      outputs:
-          image-version: ${{ steps.image-version.outputs.version }}
+  deploy-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    outputs:
+      image-version: ${{ steps.image-version.outputs.version }}
 
-      steps:
-
+    steps:
       - name: Download Docker context artifact
         uses: actions/download-artifact@v4
         with:
@@ -176,10 +170,10 @@ jobs:
 
       - name: "Get registry credentials from vault"
         run: |
-            REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)
-            REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)
-            echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
-            echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
+          REGISTRY_USERNAME=$(az keyvault secret show --name acr-username --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)
+          REGISTRY_PASSWORD=$(az keyvault secret show --name acr-password0 --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)
+          echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
+          echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
       # - name: "Login to registry"
       #   uses: azure/docker-login@v2
@@ -202,4 +196,17 @@ jobs:
         run: |
           docker build -t ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}/safebank-be:latest .
           docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}/safebank-be:latest 
+          docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}/safebank-be:latest
+
+  automated-api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+      - name: Run API tests
+        run: |
+          postman collection run "28410609-b47ae879-1d5b-4e5e-9176-12bd841a68f0"
