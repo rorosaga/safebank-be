@@ -11,7 +11,6 @@ permissions:
   id-token: write
 
 env:
-  ENV: "ghci"
   BACKEND_WEBAPP_DEV: rorosaga-be-dev
   BACKEND_WEBAPP_UAT: rorosaga-be-uat
 

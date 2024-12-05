@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 env:
+  ENV: "ghci"
   DOCKER_REGISTRY_SERVER_URL_DEV: safebankcrdev.azurecr.io
   DOCKER_REGISTRY_SERVER_URL_UAT: safebankcruat.azurecr.io
   DOCKER_REGISTRY_SERVER_URL_PROD: safebankcrprod.azurecr.io
