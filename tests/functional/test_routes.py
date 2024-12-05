@@ -134,8 +134,21 @@ def test_delete_user(testing_client):
 
 
 # TRANSFER TESTS
-def test_transfer(testing_client):
+def test_get_users(testing_client):
+    """
+    GIVEN a Flask application
+    WHEN the '/transactions' page is requested (GET)
+    THEN check the response is valid
+    """
+    response = testing_client.get('/transactions')
+    assert response.status_code == 200
 
+def test_transfer(testing_client):
+    """
+    GIVEN a Flask application
+    WHEN the '/userspace/<username>/transfer' page revieves (PUT)
+    THEN check the transfer is made successfully
+    """
     testing_client.post('/users', json={'username': 'bob1234', 'country': 'Canada', 'password': '1234'})
     testing_client.post('/accounts', json={'name': 'Account2', 'country':'Spain', 'username':'bob1234'})
 
@@ -149,7 +162,11 @@ def test_transfer(testing_client):
     assert response.status_code == 200
 
 def test_invalid_transfers(testing_client):
-
+    """
+    GIVEN a Flask application
+    WHEN the '/userspace/<username>/transfer' page revieves (PUT) with a negative amount, or the amount is too large
+    THEN check the transfer is unsuccessful
+    """
     testing_client.post('/users', json={'username': 'bob1234', 'country': 'Canada', 'password': '1234'})
     testing_client.post('/accounts', json={'name': 'Account2', 'country':'Spain', 'username':'bob1234'})
 
@@ -165,6 +182,11 @@ def test_invalid_transfers(testing_client):
     assert response.status_code == 400
 
 def test_transfer_between_users(testing_client):
+    """
+    GIVEN a Flask application
+    WHEN the '/userspace/<username>/transfer' page revieves (PUT)
+    THEN check the transfer is made successfully between different users
+    """
 
     testing_client.post('/users', json={'username': 'bob1234', 'country': 'Canada', 'password': '1234'})
     testing_client.post('/users', json={'username': 'maggie1234', 'country': 'Canada', 'password': '1234'})
