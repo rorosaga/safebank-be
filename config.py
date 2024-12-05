@@ -35,11 +35,28 @@ class DevelopmentConfig(Config):
         SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
             dbuser=urllib.parse.quote(os.getenv('DBUSER')),
             dbpass=credential.get_token(
-                'https://ossrdbms-aad.database.windows.net'
-            ).token,
+                'https://ossrdbms-aad.database.windows.net').token,
             dbhost=os.getenv('DBHOST'),
             dbname=os.getenv('DBNAME')
         )
         
         # Enable debugging
         DEBUG = True
+
+class ProductionConfig(Config):
+    if os.getenv('ENV') == 'prod':
+
+        # Initialize Azure credentials
+        credential = DefaultAzureCredential()
+        
+        # Construct the SQLAlchemy Database URI
+        SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
+            dbuser=urllib.parse.quote(os.getenv('DBUSER')),
+            dbpass=credential.get_token(
+                'https://ossrdbms-aad.database.windows.net').token,
+            dbhost=os.getenv('DBHOST'),
+            dbname=os.getenv('DBNAME')
+        )
+
+        # Disable debugging
+        DEBUG = False
