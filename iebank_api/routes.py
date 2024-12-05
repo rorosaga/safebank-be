@@ -95,7 +95,7 @@ def create_account(data=None):
         db.session.add(account)
         db.session.commit()
         logger.info(f"Account created successfully for username: {username}")
-        return jsonify({"message": "Account created successfully"}), 201
+        return jsonify({"message": "Account created successfully", "account": format_account(account)}), 201
     except Exception as e:
         logger.error(f"Error creating account: {e}", exc_info=True)
         return jsonify({"error": "Failed to create account"}), 500
@@ -156,21 +156,21 @@ def update_account(id):
     account.name = request.json["name"]
     account.country = request.json["country"]
     db.session.commit()
-    return format_account(account)
+    return {"account":format_account(account)}
 
 @app.route('/users/<string:username>', methods=['PUT'])
 def update_user(username):
     user = User.query.get(username)
     user.country = request.json['country']
     db.session.commit()
-    return format_user(user)
+    return {'user':format_user(user)}
 
 @app.route('/accounts/<int:id>', methods=['DELETE'])
 def delete_account(id):
     account = Account.query.get(id)
     db.session.delete(account)
     db.session.commit()
-    return format_account(account)
+    return {"account":format_account(account)}
 
 @app.route('/users/<string:username>', methods=['DELETE'])
 def delete_user(username):
@@ -180,7 +180,7 @@ def delete_user(username):
         db.session.delete(account)
     db.session.delete(user)
     db.session.commit()
-    return format_user(user)
+    return {"user": format_user(user)}
 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -231,7 +231,7 @@ def create_user():
         }
         create_account(account_data)
 
-        return jsonify({'message': 'User created successfully'}), 201
+        return jsonify({'message': 'User created successfully', 'user': format_user(new_user)}), 201
     except Exception as e:
         print(f"Error during user creation: {e}")
         return jsonify({"message": "Internal server error", "error": str(e)}), 500

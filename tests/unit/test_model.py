@@ -1,6 +1,8 @@
 from iebank_api.models import Account, User, Transaction
 import pytest
+from iebank_api import db
 
+# ACCOUNT MODEL TESTS
 def test_create_account():
     """
     GIVEN a Account model
@@ -54,3 +56,33 @@ def test_account_initialization_with_balance():
     account = Account(name="Test",currency='€', country='Spain', username="John")
     account.balance = 100.0  # Manually setting balance
     assert account.balance == 100.0
+
+# USER MODEL TESTS
+def test_user_initialization():
+    """
+    GIVEN a User model
+    WHEN a new User is created
+    THEN check that the username, password, and country are set correctly
+    """
+    user = User(username="john_doe", password="password123", country="Spain")
+    
+    assert user.username == "john_doe"
+    assert user.password is not None  # Password is hashed, so we check that it is not None
+    assert user.country == "Spain"
+
+
+# TRANSACTION MODEL TESTS
+
+def test_transaction_initialization():
+    """
+    GIVEN a Transaction model
+    WHEN a new Transaction is created
+    THEN check that the transaction details are set correctly
+    """
+    transaction = Transaction(username="john_doe", currency="€", source_account="12345678901234567890", target_account="09876543210987654321", amount=100.0)
+    
+    assert transaction.username == "john_doe"
+    assert transaction.currency == "€"
+    assert transaction.source_account == "12345678901234567890"
+    assert transaction.target_account == "09876543210987654321"
+    assert transaction.amount == 100.0
