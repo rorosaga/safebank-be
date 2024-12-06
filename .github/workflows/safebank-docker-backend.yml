@@ -162,7 +162,7 @@ jobs:
 
       - name: Run Postman tests
         run: |
-          newman run ../tests/ci/safebank.postman_collection.json
+          newman run ../../tests/ci/safebank.postman_collection.json
 
   deploy-prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
