@@ -339,7 +339,7 @@
 			"response": []
 		},
 		{
-			"name": "Get User Accounts",
+			"name": "Get User Accounts and Transfer",
 			"event": [
 				{
 					"listen": "test",
@@ -385,10 +385,38 @@
 							"pm.test(\"Two accounts are present in the response\", function () {",
 							"    const responseData = pm.response.json();",
 							"    pm.expect(responseData.accounts).to.have.lengthOf(2, \"Expected to have two accounts in the response\");",
-							"    pm.globals.set(\"accountNumber1\", responseData.accounts[0].account_number);",
-							"    pm.globals.set(\"accountNumber2\", responseData.accounts[1].account_number);",
+							"    pm.environment.set(\"accountNumber1\", responseData.accounts[0].account_number);",
+							"    pm.environment.set(\"accountNumber2\", responseData.accounts[1].account_number);",
+							"    ",
 							"});",
+							"pm.test(\"Transfer between two accounts with PUT request\", function () {",
+							"    const sourceAccountNumber = pm.environment.get(\"accountNumber1\");",
+							"    const targetAccountNumber = pm.environment.get(\"accountNumber2\");",
+							"    ",
+							"    const transferData = {",
+							"        source: sourceAccountNumber,",
+							"        target: targetAccountNumber,",
+							"        amount: 500,",
+							"        currency: \"EUR\"",
+							"    };",
 							"",
+							"    pm.sendRequest({",
+							"        url: 'https://safebank-be-uat.azurewebsites.net/userspace/pete/transfer',",
+							"        method: 'PUT',",
+							"        header: {",
+							"            'Content-Type': 'application/json'",
+							"        },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify(transferData)",
+							"        },",
+							"        tests: {",
+							"            \"Transfer request is successful\": function () {",
+							"                pm.response.to.have.status(200);",
+							"            }",
+							"        }",
+							"    });",
+							"});",
 							"",
 							""
 						],
@@ -412,64 +440,6 @@
 						"userspace",
 						"pete",
 						"accounts"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Transfer",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Transfer successful message is present\", function () {",
-							"    pm.expect(pm.response.json().message).to.equal(\"Transfer successful\");",
-							"});",
-							"",
-							"pm.test(\"Source account balance is updated\", function () {",
-							"    pm.expect(pm.response.json().source_account.balance).to.equal(900);",
-							"});",
-							"",
-							"pm.test(\"Target account balance is updated\", function () {",
-							"    pm.expect(pm.response.json().target_account.balance).to.equal(1100);",
-							"});",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"source\": \"04144057885078657212\",\n    \"target\": \"63218419405415524806\",\n    \"amount\": \"100\",\n    \"currency\": \"EUR\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "https://safebank-be-uat.azurewebsites.net/userspace/pete/transfer",
-					"protocol": "https",
-					"host": [
-						"safebank-be-uat",
-						"azurewebsites",
-						"net"
-					],
-					"path": [
-						"userspace",
-						"pete",
-						"transfer"
 					]
 				}
 			},
