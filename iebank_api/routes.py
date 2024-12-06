@@ -180,7 +180,7 @@ def delete_user(username):
     user = User.query.get(username)
     accounts = user.get_accounts()
     for account in accounts:
-        db.session.delete(account)
+        delete_account(account.id)
     db.session.delete(user)
     db.session.commit()
     return {"user": format_user(user)}

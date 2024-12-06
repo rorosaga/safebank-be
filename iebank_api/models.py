@@ -60,10 +60,8 @@ class User(db.Model):
         self.country = country
 
     def get_accounts(self):
-        """
-        Returns all accounts associated with the user.
-        """
-        return self.accounts.all()
+        return Account.query.filter_by(username=self.username).all()
+
 
     def get_transactions(self):
         """
