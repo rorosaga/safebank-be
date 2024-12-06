@@ -294,6 +294,16 @@ def login_admin():
         print(f"Error during login: {e}")
         return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
 
+@app.route('/reset-db', methods=['POST'])
+def reset_db():
+    try:
+        # Add logic to clear the database tables
+        db.drop_all()  # Drops all tables
+        db.create_all()  # Recreate all tables
+        return jsonify({"message": "Database reset successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 # Transactions code
