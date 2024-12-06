@@ -134,7 +134,7 @@ def test_delete_user(testing_client):
 
 
 # TRANSFER TESTS
-def test_get_users(testing_client):
+def test_get_transactions(testing_client):
     """
     GIVEN a Flask application
     WHEN the '/transactions' page is requested (GET)
