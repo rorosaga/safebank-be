@@ -178,7 +178,7 @@ def delete_account(id):
 @app.route('/users/<string:username>', methods=['DELETE'])
 def delete_user(username):
     user = User.query.get(username)
-    accounts = user.get_accounts()
+    accounts = Account.get_accounts(username)
     for account in accounts:
         delete_account(account.id)
     db.session.delete(user)

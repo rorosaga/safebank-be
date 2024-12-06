@@ -87,6 +87,9 @@ class Account(db.Model):
 
     username = db.Column(db.String(32), db.ForeignKey('user.username'), nullable=False)
 
+    def get_accounts(username):
+        return Account.query.filter_by(username=username)
+
     def __repr__(self):
         return f'<Account {self.account_number}>'
 

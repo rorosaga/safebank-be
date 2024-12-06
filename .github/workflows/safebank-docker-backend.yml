@@ -155,14 +155,12 @@ jobs:
     needs: deploy-uat
     steps:
       - uses: actions/checkout@v4
-      - name: Install Postman CLI
+      - name: Install dependencies
         run: |
-          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
-      - name: Login to Postman CLI
-        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
-      - name: Run API tests
+          npm install -g newman
+      - name: Run Postman tests
         run: |
-          postman collection run "28410609-b47ae879-1d5b-4e5e-9176-12bd841a68f0"
+          newman run ./tests/ci/safebank.postman_collection.json
 
   deploy-prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
