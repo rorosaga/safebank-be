@@ -444,6 +444,48 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Reset Database",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/reset-db",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"reset-db"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "accountNumber1",
+			"value": ""
+		},
+		{
+			"key": "accountNumber2",
+			"value": ""
 		}
 	]
 }
