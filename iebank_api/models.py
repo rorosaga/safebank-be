@@ -29,6 +29,19 @@ class Transaction(db.Model):
         self.target_account = target_account
         self.amount = amount
 
+    def get_account_transactions(account_number):
+        """
+        Returns all transactions associated with a bank account.
+
+        :param account_number: The account number to query transactions for.
+        :return: A list of transactions where the account is either the source or target.
+        """
+        return Transaction.query.filter(
+            (Transaction.source_account == account_number) | 
+            (Transaction.target_account == account_number)
+        ).all()
+
+
 
 class User(db.Model):
     username = db.Column(db.String(32), nullable=False, primary_key=True)

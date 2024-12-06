@@ -168,6 +168,9 @@ def update_user(username):
 @app.route('/accounts/<int:id>', methods=['DELETE'])
 def delete_account(id):
     account = Account.query.get(id)
+    transactions = Transaction.get_account_transactions(account.account_number)
+    for transaction in transactions:
+        db.session.delete(transaction)
     db.session.delete(account)
     db.session.commit()
     return {"account":format_account(account)}
