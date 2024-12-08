@@ -192,8 +192,8 @@ def create_user():
         data = request.json
         username = data.get('username')
         password = data.get('password')
-        country = data.get('country')
-
+        country = data.get('country', 'Spain') #by default we set to Spain since we are a Spanish bank
+ 
         if not username or not password:
             return jsonify({"message": "Username and password are required"}), 400
 
