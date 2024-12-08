@@ -43,7 +43,7 @@ class DevelopmentConfig(Config):
         # Enable debugging
         DEBUG = True
 
-class ProductionConfig(Config):
+class PRODConfig(Config):
     if os.getenv('ENV') == 'prod':
 
         # Initialize Azure credentials
