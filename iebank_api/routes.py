@@ -7,12 +7,15 @@ import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from werkzeug.security import generate_password_hash, check_password_hash
 
-connection_string = "InstrumentationKey=1a8b949f-7999-4e0b-9e44-287b23b089b2;IngestionEndpoint=https://northeurope-2.in.applicationinsights.azure.com/;LiveEndpoint=https://northeurope.livediagnostics.monitor.azure.com/;ApplicationId=7fb9da30-78df-4600-af14-083c9cf1d69e"
+instrumentation_key = os.getenv("VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY")
+
+connection_string = f'InstrumentationKey={instrumentation_key}'
 
 # Set up logging
 logger = logging.getLogger("iebank_logger")
 logger.setLevel(logging.INFO)
 logger.addHandler(AzureLogHandler(connection_string=connection_string))
+logger.warning('Hello, World!')
 
 # Log a test message
 @app.before_request

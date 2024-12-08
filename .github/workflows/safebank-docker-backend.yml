@@ -80,12 +80,11 @@ jobs:
           echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
           echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
-      # - name: "Login to registry"
-      #   uses: azure/docker-login@v2
-      #   with:
-      #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}
-      #     username: ${{ env.REGISTRY_USERNAME }}
-      #     password: ${{ env.REGISTRY_PASSWORD }}
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
 
       - name: "Set image version"
         id: image-version
@@ -135,12 +134,11 @@ jobs:
           echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
           echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
-      # - name: "Login to registry"
-      #   uses: azure/docker-login@v2
-      #   with:
-      #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_UAT }}
-      #     username: ${{ env.REGISTRY_USERNAME }}
-      #     password: ${{ env.REGISTRY_PASSWORD }}
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
 
       - name: "Set image version"
         id: image-version
@@ -202,12 +200,11 @@ jobs:
           echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
           echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
-      # - name: "Login to registry"
-      #   uses: azure/docker-login@v2
-      #   with:
-      #     login-server: ${{ env.DOCKER_REGISTRY_SERVER_URL_PROD }}
-      #     username: ${{ env.REGISTRY_USERNAME }}
-      #     password: ${{ env.REGISTRY_PASSWORD }}
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
 
       - name: "Set image version"
         id: image-version
