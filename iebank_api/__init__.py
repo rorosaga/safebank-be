@@ -23,7 +23,7 @@ elif os.getenv('ENV') == 'uat':
     app.config.from_object('config.UATConfig')
 elif os.getenv('ENV') == 'prod':
     print("Running in prod mode")
-    app.config.from_object('config.PRODConfig')
+    app.config.from_object('config.ProductionConfig')
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

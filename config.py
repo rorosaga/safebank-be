@@ -43,7 +43,7 @@ class DevelopmentConfig(Config):
         # Enable debugging
         DEBUG = True
 
-class PRODConfig(Config):
+class ProductionConfig(Config):
     if os.getenv('ENV') == 'prod':
         credential = DefaultAzureCredential()
         SQLALCHEMY_DATABASE_URI = 'postgresql://{dbuser}:{dbpass}@{dbhost}/{dbname}'.format(
