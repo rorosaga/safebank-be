@@ -16,7 +16,7 @@ env:
   KEY_VAULT_NAME_PROD: safebank-kv-prod
 
 jobs:
-  build:
+  build-dev:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +27,18 @@ jobs:
         with:
           python-version: "3.11"
 
+
+      - name: "Log in to azure"
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
+  
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
@@ -51,7 +63,7 @@ jobs:
   deploy-dev:
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-dev
     env:
       ADMIN_USER: ${{ secrets.ADMIN_USER }}
       ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
@@ -80,12 +92,6 @@ jobs:
           echo "REGISTRY_USERNAME=${REGISTRY_USERNAME}" >> $GITHUB_ENV
           echo "REGISTRY_PASSWORD=${REGISTRY_PASSWORD}" >> $GITHUB_ENV
 
-      - name: "Get app insights key from vault"
-        uses: Azure/cli@v2.1.0
-        with:
-          inlineScript: |
-            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
-
       - name: "Set image version"
         id: image-version
         run: |
@@ -102,10 +108,54 @@ jobs:
           docker login ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }} -u ${{ env.REGISTRY_USERNAME }} -p ${{ env.REGISTRY_PASSWORD }}
           docker push ${{ env.DOCKER_REGISTRY_SERVER_URL_DEV }}/safebank-be:latest
 
+  build-uat:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      - name: "Log in to azure"
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
+  
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8 pytest
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=iebank_api -v
+      - name: Save Docker context as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-context
+          path: .
+          if-no-files-found: error
+
   deploy-uat:
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-uat
     env:
       ADMIN_USER: ${{ secrets.ADMIN_USER }}
       ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
@@ -168,10 +218,55 @@ jobs:
         run: |
           newman run ./tests/ci/safebank.postman_collection.json
 
+
+  build-prod:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      - name: "Log in to azure"
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: "Get app insights key from vault"
+        uses: Azure/cli@v2.1.0
+        with:
+          inlineScript: |
+            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)" >> $GITHUB_ENV
+  
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8 pytest
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Test with pytest
+        run: |
+          python -m pytest --cov=iebank_api -v
+      - name: Save Docker context as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-context
+          path: .
+          if-no-files-found: error
+
   deploy-prod:
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-prod
     env:
       ADMIN_USER: ${{ secrets.ADMIN_USER }}
       ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
