@@ -28,7 +28,7 @@ elif os.getenv('ENV') == 'prod':
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 from iebank_api.models import Account, User, Transaction
 
