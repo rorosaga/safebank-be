@@ -1,4 +1,5 @@
 import time
+import os
 from flask import request, jsonify
 from iebank_api import db, app
 from iebank_api.models import Account, User, Transaction, get_user_by_username
@@ -282,8 +283,11 @@ def login_admin():
 
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
+        
+        admin_user = os.getenv('ADMIN_USER')
+        admin_pass = os.getenv('ADMIN_PASS')
 
-        if username == "admin" and password == "1234":
+        if username == admin_user and password == admin_pass:
             return jsonify({'message': 'Login successful'}), 200
 
         return jsonify({'message': 'Invalid username or password'}), 401
