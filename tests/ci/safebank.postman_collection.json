@@ -1,0 +1,480 @@
+{
+	"info": {
+		"_postman_id": "b47ae879-1d5b-4e5e-9176-12bd841a68f0",
+		"name": "safebank",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28410609"
+	},
+	"item": [
+		{
+			"name": "Create User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 201\", function () {",
+							"    pm.expect(pm.response.code).to.equal(201);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response has the required fields - message and user\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.message).to.exist;",
+							"    pm.expect(responseData.user).to.exist;",
+							"});",
+							"",
+							"",
+							"pm.test(\"User object contains the required fields - country and username\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.user).to.have.property('country');",
+							"    pm.expect(responseData.user).to.have.property('username');",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"pete\",\n    \"password\": \"1234\",\n    \"country\": \"canada\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/users",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Client Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response has the required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.message).to.exist;",
+							"});",
+							"",
+							"",
+							"pm.test(\"Message is a non-empty string\", function () {",
+							"  const responseData = pm.response.json();",
+							"  ",
+							"  pm.expect(responseData.message).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Message should not be empty\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"pete\",\n    \"password\":\"1234\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/clientlogin",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"clientlogin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Account details are correct\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.account.name).to.equal(\"Test\");",
+							"    pm.expect(jsonData.account.country).to.equal(\"Canada\");",
+							"    pm.expect(jsonData.account.username).to.equal(\"pete\");",
+							"    pm.expect(jsonData.account.balance).to.equal(1000);",
+							"    pm.expect(jsonData.account.currency).to.equal(\"EUR\");",
+							"    pm.expect(jsonData.account.status).to.equal(\"Active\");",
+							"});",
+							"",
+							"pm.test(\"Response has a valid JSON schema\", function () {",
+							"    pm.expect(pm.response.json()).to.be.a('object');",
+							"    pm.expect(pm.response.json().account).to.be.a('object');",
+							"    pm.expect(pm.response.json().account.account_number).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.balance).to.be.a('number');",
+							"    pm.expect(pm.response.json().account.country).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.created_at).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.currency).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.id).to.be.a('number');",
+							"    pm.expect(pm.response.json().account.name).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.status).to.be.a('string');",
+							"    pm.expect(pm.response.json().account.username).to.be.a('string');",
+							"    pm.expect(pm.response.json().message).to.be.a('string');",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response status code is 201\", function () {",
+							"    pm.expect(pm.response.code).to.equal(201);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response time is less than 300ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(300);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test\",\n    \"country\": \"Canada\",\n    \"username\": \"pete\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/accounts",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Users",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"  pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"pm.test(\"Response has the required fields - country and username\", function () {",
+							"    const responseData = pm.response.json();",
+							"",
+							"    responseData.users.forEach(function(user) {",
+							"        pm.expect(user).to.have.property('country');",
+							"        pm.expect(user).to.have.property('username');",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Country is a non-empty string\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData.users).to.be.an('array');",
+							"    responseData.users.forEach(function(user) {",
+							"        pm.expect(user.country).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Country should not be empty\");",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Username is a non-empty string\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData.users).to.be.an('array');",
+							"    responseData.users.forEach(function(user) {",
+							"        pm.expect(user.username).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Username should not be empty\");",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/users",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Accounts and Transfer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response has the required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.accounts).to.be.an('array');",
+							"    ",
+							"    responseData.accounts.forEach(function(account) {",
+							"        pm.expect(account).to.have.property('account_number');",
+							"        pm.expect(account).to.have.property('balance');",
+							"        pm.expect(account).to.have.property('country');",
+							"        pm.expect(account).to.have.property('created_at');",
+							"        pm.expect(account).to.have.property('currency');",
+							"        pm.expect(account).to.have.property('id');",
+							"        pm.expect(account).to.have.property('name');",
+							"        pm.expect(account).to.have.property('status');",
+							"        pm.expect(account).to.have.property('username');",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Account number is a non-empty string, balance is a non-negative number, and id is a non-negative integer\", function () {",
+							"  const responseData = pm.response.json();",
+							"  ",
+							"  pm.expect(responseData).to.be.an('object');",
+							"  pm.expect(responseData.accounts).to.be.an('array').that.is.not.empty;",
+							"",
+							"  responseData.accounts.forEach(function(account) {",
+							"    pm.expect(account.account_number).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Account number should not be empty\");",
+							"    pm.expect(account.balance).to.be.a('number').and.to.be.at.least(0, \"Balance should be a non-negative number\");",
+							"    pm.expect(account.id).to.be.a('number').and.to.be.at.least(0, \"ID should be a non-negative integer\");",
+							"  });",
+							"});",
+							"pm.test(\"Two accounts are present in the response\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData.accounts).to.have.lengthOf(2, \"Expected to have two accounts in the response\");",
+							"    pm.environment.set(\"accountNumber1\", responseData.accounts[0].account_number);",
+							"    pm.environment.set(\"accountNumber2\", responseData.accounts[1].account_number);",
+							"    ",
+							"});",
+							"pm.test(\"Transfer between two accounts with PUT request\", function () {",
+							"    const sourceAccountNumber = pm.environment.get(\"accountNumber1\");",
+							"    const targetAccountNumber = pm.environment.get(\"accountNumber2\");",
+							"    ",
+							"    const transferData = {",
+							"        source: sourceAccountNumber,",
+							"        target: targetAccountNumber,",
+							"        amount: 500,",
+							"        currency: \"EUR\"",
+							"    };",
+							"",
+							"    pm.sendRequest({",
+							"        url: 'https://safebank-be-uat.azurewebsites.net/userspace/pete/transfer',",
+							"        method: 'PUT',",
+							"        header: {",
+							"            'Content-Type': 'application/json'",
+							"        },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify(transferData)",
+							"        },",
+							"        tests: {",
+							"            \"Transfer request is successful\": function () {",
+							"                pm.response.to.have.status(200);",
+							"            }",
+							"        }",
+							"    });",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/userspace/pete/accounts",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"userspace",
+						"pete",
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Accounts and Delete them",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has the required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.accounts).to.be.an('array').and.to.have.lengthOf.at.least(1);",
+							"",
+							"    responseData.accounts.forEach(function(account) {",
+							"        pm.expect(account).to.have.property('account_number');",
+							"        pm.expect(account).to.have.property('balance');",
+							"        pm.expect(account).to.have.property('country');",
+							"        pm.expect(account).to.have.property('created_at');",
+							"        pm.expect(account).to.have.property('currency');",
+							"        pm.expect(account).to.have.property('id');",
+							"        pm.expect(account).to.have.property('name');",
+							"        pm.expect(account).to.have.property('status');",
+							"        pm.expect(account).to.have.property('username');",
+							"    });",
+							"});",
+							"",
+							"",
+							"pm.test(\"Validate account properties\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    ",
+							"    responseData.accounts.forEach(function(account) {",
+							"        pm.expect(account.account_number).to.be.a('string').and.to.have.lengthOf.at.least(1, \"Account number should be a non-empty string\");",
+							"        pm.expect(account.balance).to.be.a('number').and.to.be.at.least(0, \"Balance should be a non-negative number\");",
+							"        pm.expect(account.id).to.be.a('number').and.to.be.at.least(0, \"ID should be a non-negative integer\");",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/accounts",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete User",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "https://safebank-be-uat.azurewebsites.net/users/pete",
+					"protocol": "https",
+					"host": [
+						"safebank-be-uat",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"users",
+						"pete"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "accountNumber1",
+			"value": ""
+		},
+		{
+			"key": "accountNumber2",
+			"value": ""
+		}
+	]
+}

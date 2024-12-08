@@ -29,6 +29,19 @@ class Transaction(db.Model):
         self.target_account = target_account
         self.amount = amount
 
+    def get_account_transactions(account_number):
+        """
+        Returns all transactions associated with a bank account.
+
+        :param account_number: The account number to query transactions for.
+        :return: A list of transactions where the account is either the source or target.
+        """
+        return Transaction.query.filter(
+            (Transaction.source_account == account_number) | 
+            (Transaction.target_account == account_number)
+        ).all()
+
+
 
 class User(db.Model):
     username = db.Column(db.String(32), nullable=False, primary_key=True)
@@ -47,10 +60,8 @@ class User(db.Model):
         self.country = country
 
     def get_accounts(self):
-        """
-        Returns all accounts associated with the user.
-        """
-        return self.accounts.all()
+        return Account.query.filter_by(username=self.username).all()
+
 
     def get_transactions(self):
         """
@@ -75,6 +86,9 @@ class Account(db.Model):
     country = db.Column(db.String(64), nullable=False)
 
     username = db.Column(db.String(32), db.ForeignKey('user.username'), nullable=False)
+
+    def get_accounts(username):
+        return Account.query.filter_by(username=username)
 
     def __repr__(self):
         return f'<Account {self.account_number}>'

@@ -1,4 +1,5 @@
 import time
+import os
 from flask import request, jsonify
 from iebank_api import db, app
 from iebank_api.models import Account, User, Transaction, get_user_by_username
@@ -6,17 +7,17 @@ import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Replace with your connection string
-connection_string = "InstrumentationKey=1a8b949f-7999-4e0b-9e44-287b23b089b2;IngestionEndpoint=https://northeurope-2.in.applicationinsights.azure.com/;LiveEndpoint=https://northeurope.livediagnostics.monitor.azure.com/;ApplicationId=7fb9da30-78df-4600-af14-083c9cf1d69e"
+instrumentation_key = os.getenv("VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY")
+
+connection_string = f'InstrumentationKey={instrumentation_key}'
 
 # Set up logging
 logger = logging.getLogger("iebank_logger")
 logger.setLevel(logging.INFO)
 logger.addHandler(AzureLogHandler(connection_string=connection_string))
+logger.warning('Hello, World!')
 
 # Log a test message
-
-
 @app.before_request
 def start_timer():
     request.start_time = time.time()
@@ -95,7 +96,7 @@ def create_account(data=None):
         db.session.add(account)
         db.session.commit()
         logger.info(f"Account created successfully for username: {username}")
-        return jsonify({"message": "Account created successfully"}), 201
+        return jsonify({"message": "Account created successfully", "account": format_account(account)}), 201
     except Exception as e:
         logger.error(f"Error creating account: {e}", exc_info=True)
         return jsonify({"error": "Failed to create account"}), 500
@@ -156,31 +157,34 @@ def update_account(id):
     account.name = request.json["name"]
     account.country = request.json["country"]
     db.session.commit()
-    return format_account(account)
+    return {"account":format_account(account)}
 
 @app.route('/users/<string:username>', methods=['PUT'])
 def update_user(username):
     user = User.query.get(username)
     user.country = request.json['country']
     db.session.commit()
-    return format_user(user)
+    return {'user':format_user(user)}
 
 @app.route('/accounts/<int:id>', methods=['DELETE'])
 def delete_account(id):
     account = Account.query.get(id)
+    transactions = Transaction.get_account_transactions(account.account_number)
+    for transaction in transactions:
+        db.session.delete(transaction)
     db.session.delete(account)
     db.session.commit()
-    return format_account(account)
+    return {"account":format_account(account)}
 
 @app.route('/users/<string:username>', methods=['DELETE'])
 def delete_user(username):
     user = User.query.get(username)
-    accounts = user.get_accounts()
+    accounts = Account.get_accounts(username)
     for account in accounts:
-        db.session.delete(account)
+        delete_account(account.id)
     db.session.delete(user)
     db.session.commit()
-    return format_user(user)
+    return {"user": format_user(user)}
 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -231,7 +235,7 @@ def create_user():
         }
         create_account(account_data)
 
-        return jsonify({'message': 'User created successfully'}), 201
+        return jsonify({'message': 'User created successfully', 'user': format_user(new_user)}), 201
     except Exception as e:
         print(f"Error during user creation: {e}")
         return jsonify({"message": "Internal server error", "error": str(e)}), 500
@@ -282,8 +286,11 @@ def login_admin():
 
         if not username or not password:
             return jsonify({'message': 'Username and password are required'}), 400
+        
+        admin_user = os.getenv('ADMIN_USER')
+        admin_pass = os.getenv('ADMIN_PASS')
 
-        if username == "admin" and password == "1234":
+        if username == admin_user and password == admin_pass:
             return jsonify({'message': 'Login successful'}), 200
 
         return jsonify({'message': 'Invalid username or password'}), 401
