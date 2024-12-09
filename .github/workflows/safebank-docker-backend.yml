@@ -37,7 +37,7 @@ jobs:
         uses: Azure/cli@v2.1.0
         with:
           inlineScript: |
-            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
+            echo "VUE_APP_APPINSIGHTS_CONNECTION=$(az keyvault secret show --name appInsightsConnection --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
   
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
@@ -129,7 +129,7 @@ jobs:
         uses: Azure/cli@v2.1.0
         with:
           inlineScript: |
-            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_UAT }} --query value -o tsv)" >> $GITHUB_ENV
+            echo "VUE_APP_APPINSIGHTS_CONNECTION=$(az keyvault secret show --name appInsightsConnection --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
   
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
@@ -240,7 +240,7 @@ jobs:
         uses: Azure/cli@v2.1.0
         with:
           inlineScript: |
-            echo "VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY=$(az keyvault secret show --name appInsightsKey --vault-name ${{ env.KEY_VAULT_NAME_PROD }} --query value -o tsv)" >> $GITHUB_ENV
+            echo "VUE_APP_APPINSIGHTS_CONNECTION=$(az keyvault secret show --name appInsightsConnection --vault-name ${{ env.KEY_VAULT_NAME_DEV }} --query value -o tsv)" >> $GITHUB_ENV
   
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
