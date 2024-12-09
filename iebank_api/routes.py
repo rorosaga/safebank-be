@@ -7,9 +7,7 @@ import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from werkzeug.security import generate_password_hash, check_password_hash
 
-instrumentation_key = os.getenv("VUE_APP_APPINSIGHTS_INSTRUMENTATIONKEY")
-
-connection_string = f'InstrumentationKey={instrumentation_key}'
+connection_string = os.getenv("VUE_APP_APPINSIGHTS_CONNECTION")
 
 # Set up logging
 logger = logging.getLogger("iebank_logger")
